@@ -1,0 +1,641 @@
+```yaml
+template:
+  id: jira-prd-template-v2-enhanced
+  name: Enhanced Jira Product Requirements Document (PM Edition)
+  version: 2.0
+  output:
+    format: markdown
+    filename: jira/prd-enhanced.md
+    title: "{{project_name}} – Product Requirements Document (PRD)"
+  metadata:
+    author: "{{pm_name}}"
+    stakeholders: "{{stakeholder_list}}"
+    jira_epic: "{{epic_link}}"
+    confluence_page: "{{confluence_link}}"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+  validation: stakeholder-review
+
+#=============================================================================
+# SECTION 1: EXECUTIVE SUMMARY & STRATEGIC CONTEXT
+#=============================================================================
+sections:
+  - id: executive-summary
+    title: Executive Summary
+    priority: critical
+    instruction: |
+      Provide a 3-5 sentence high-level summary that executives can read
+      in 60 seconds to understand the "what" and "why" of this initiative.
+      Include: Problem, Solution, Impact, Investment Required, Timeline.
+    output_format: paragraph
+    max_length: 250 words
+
+  - id: strategic-context
+    title: Strategic Context & Business Case
+    instruction: |
+      Connect this PRD to company strategy, revenue goals, and market position.
+      This section justifies WHY we're building this NOW.
+    sections:
+      - id: business-objectives
+        title: Business Objectives
+        type: bullet-list
+        instruction: |
+          List specific business goals this feature/product enables.
+          Examples: "Increase revenue by X%", "Reduce churn by Y%", 
+          "Enter new market segment Z"
+      
+      - id: strategic-alignment
+        title: Strategic Alignment
+        type: paragraphs
+        instruction: |
+          How does this align with company OKRs, product vision, or 
+          strategic initiatives? Reference specific strategies.
+        examples:
+          - "Aligns with Q1 2026 OKR: 'Improve promotional ROI by 15%'"
+          - "Supports Product Vision: 'Data-driven merchandising decisions'"
+      
+      - id: market-opportunity
+        title: Market Opportunity
+        type: structured
+        fields:
+          - market_size: "Total addressable market (TAM)"
+          - target_segment: "Specific segment we're targeting"
+          - competitive_landscape: "How competitors address this need"
+          - differentiation: "Our unique value proposition"
+      
+      - id: success-metrics
+        title: Success Metrics & KPIs
+        type: table
+        columns: [Metric, Baseline, Target, Measurement Method, Timeline]
+        instruction: |
+          Define quantifiable success criteria. Include leading and 
+          lagging indicators.
+        examples:
+          - ["Monthly Active Users", "0", "500", "Analytics Dashboard", "3 months"]
+          - ["Customer Satisfaction (CSAT)", "N/A", "≥4.0/5", "Post-session survey", "Ongoing"]
+      
+      - id: roi-analysis
+        title: Return on Investment (ROI)
+        type: structured
+        fields:
+          - development_cost: "Estimated engineering investment (person-months)"
+          - ongoing_cost: "Annual maintenance/hosting costs"
+          - expected_revenue: "Revenue impact (annual)"
+          - cost_savings: "Cost reduction (annual)"
+          - payback_period: "Expected time to positive ROI"
+          - risk_adjusted_roi: "Accounting for execution risks"
+
+  - id: problem-statement
+    title: Problem Statement & User Research
+    instruction: |
+      Deeply articulate the problem from user and business perspectives.
+      Ground this in actual user research, not assumptions.
+    sections:
+      - id: problem-overview
+        title: Problem Overview
+        type: paragraphs
+        instruction: |
+          Describe the problem in 2-3 paragraphs. Be specific about pain points,
+          frequency, and impact. Use real quotes from user research.
+      
+      - id: user-personas
+        title: User Personas & Jobs-to-be-Done
+        type: structured-list
+        instruction: |
+          Define 2-4 primary personas who experience this problem.
+        fields:
+          - persona_name: "Role/Title"
+          - description: "Brief background"
+          - goals: "What they're trying to achieve"
+          - pain_points: "Specific frustrations"
+          - jtbd: "Jobs-to-be-Done statement"
+          - user_quote: "Verbatim user feedback (if available)"
+        examples:
+          - persona_name: "Sarah - Brand Manager"
+            goals: "Maximize promotional ROI while maintaining brand health"
+            pain_points: "Can't predict grey market impact; No visibility into post-promo cannibalization"
+            jtbd: "When planning promotions, I want to understand net revenue impact so I can optimize discount depth"
+      
+      - id: user-research
+        title: Supporting User Research
+        type: structured
+        fields:
+          - research_methods: "User interviews, surveys, analytics, etc."
+          - sample_size: "Number of users/sessions"
+          - key_findings: "3-5 critical insights"
+          - confidence_level: "High/Medium/Low based on research quality"
+      
+      - id: current-state
+        title: Current State & Workarounds
+        type: paragraphs
+        instruction: |
+          How do users solve this problem today? What are the limitations
+          of current workarounds?
+
+#=============================================================================
+# SECTION 2: SOLUTION OVERVIEW
+#=============================================================================
+  - id: solution-overview
+    title: Proposed Solution
+    instruction: |
+      Describe the solution at a high level before diving into requirements.
+    sections:
+      - id: solution-approach
+        title: Solution Approach
+        type: paragraphs
+        instruction: |
+          Describe the proposed solution in 2-4 paragraphs. Focus on 
+          HOW it solves the problem, not implementation details.
+      
+      - id: solution-principles
+        title: Solution Design Principles
+        type: bullet-list
+        instruction: |
+          List 3-5 guiding principles that shaped the solution design.
+        examples:
+          - "Transparency: Users must understand how recommendations are generated"
+          - "Actionability: Every insight must have a clear next action"
+          - "Progressive disclosure: Show simple by default, expert mode available"
+      
+      - id: user-value-prop
+        title: User Value Proposition
+        type: structured-list
+        instruction: |
+          For each key persona, articulate the specific value delivered.
+        fields:
+          - persona: "User role"
+          - value: "What problem does this solve for them?"
+          - benefit: "Quantified benefit (time saved, revenue gained, etc.)"
+      
+      - id: alternatives-considered
+        title: Alternatives Considered
+        type: table
+        columns: [Alternative, Pros, Cons, Decision Rationale]
+        instruction: |
+          Document other approaches evaluated and why they were rejected.
+          This shows due diligence and prevents rehashing old debates.
+
+#=============================================================================
+# SECTION 3: SCOPE & RELEASE PLANNING
+#=============================================================================
+  - id: scope-definition
+    title: Scope Definition & Release Strategy
+    sections:
+      - id: mvp-definition
+        title: Minimum Viable Product (MVP)
+        type: paragraphs
+        instruction: |
+          Define what constitutes MVP - the minimum feature set needed to
+          validate core hypotheses and deliver meaningful user value.
+      
+      - id: in-scope
+        title: In Scope (MVP)
+        type: bullet-list
+        instruction: |
+          Clearly list features/capabilities included in MVP release.
+      
+      - id: out-of-scope
+        title: Out of Scope (MVP)
+        type: bullet-list
+        instruction: |
+          Explicitly list what is NOT included to avoid scope creep.
+          Include rationale where helpful.
+      
+      - id: future-roadmap
+        title: Future Roadmap (Post-MVP)
+        type: table
+        columns: [Feature, Priority, Target Release, Dependencies, Rationale]
+        instruction: |
+          Show what comes after MVP to give stakeholders confidence in
+          long-term vision while keeping initial scope focused.
+      
+      - id: phasing-strategy
+        title: Phasing Strategy
+        type: structured
+        instruction: |
+          If releasing in multiple phases, define each phase clearly.
+        fields:
+          - phase_name: "Phase 1: Alpha/Beta/GA"
+          - target_date: "Target completion date"
+          - scope: "What's included in this phase"
+          - success_criteria: "What must be true to move to next phase"
+          - rollout_plan: "Percentage rollout, user segments, etc."
+      
+      - id: dependencies
+        title: Dependencies & Blockers
+        type: table
+        columns: [Dependency, Type, Owner, Status, Risk Level, Mitigation Plan]
+        instruction: |
+          Document external dependencies that could impact delivery.
+        examples:
+          - ["Data Pipeline Migration", "Technical", "Data Eng Team", "In Progress", "High", "Parallel path with manual uploads"]
+      
+      - id: assumptions-constraints
+        title: Assumptions & Constraints
+        type: structured
+        fields:
+          - technical_assumptions: "Platform, tech stack, integrations"
+          - resource_assumptions: "Team size, skills, availability"
+          - business_constraints: "Budget, timeline, compliance"
+          - data_assumptions: "Data availability, quality, volume"
+
+#=============================================================================
+# SECTION 4: DETAILED REQUIREMENTS
+#=============================================================================
+  - id: requirements
+    title: Detailed Requirements
+    instruction: |
+      Comprehensive requirements organized by category.
+      Each requirement should be testable and traceable to user value.
+    sections:
+      - id: user-stories
+        title: User Stories (Epics)
+        type: structured-list
+        instruction: |
+          High-level user stories that decompose into individual Jira tickets.
+          Use standard format: "As a [persona], I want [capability], so that [benefit]"
+        fields:
+          - story_id: "Epic ID (e.g., EPIC-101)"
+          - story: "User story statement"
+          - acceptance_criteria: "How we know it's done"
+          - priority: "Must-Have / Should-Have / Nice-to-Have (MoSCoW)"
+          - story_points: "Rough sizing (Fibonacci: 1,2,3,5,8,13)"
+          - dependencies: "Other stories this depends on"
+        examples:
+          - story_id: "EPIC-101"
+            story: "As a Brand Manager, I want to simulate multiple discount scenarios, so I can identify optimal promotional strategy"
+            acceptance_criteria: "User can create 4+ scenarios, edit discount % by product, see real-time net revenue impact"
+            priority: "Must-Have"
+            story_points: "13"
+      
+      - id: functional-requirements
+        title: Functional Requirements
+        type: numbered-list
+        prefix: FR
+        instruction: |
+          Detailed functional requirements. Each should be:
+          - Testable (clear pass/fail criteria)
+          - User-facing (describes user-visible behavior)
+          - Independent (can be implemented separately)
+          - Valuable (traceable to user/business value)
+        template: |
+          FR[N]: [Requirement statement]
+          - Priority: [Must/Should/Could/Won't]
+          - User Story: [Link to EPIC-XXX]
+          - Acceptance Criteria: [How to verify]
+          - Edge Cases: [Boundary conditions to handle]
+        examples:
+          - "FR1: The system shall allow users to filter historical performance data by year (2023-2025), product line, and short name"
+          - "FR2: When a user updates discount % in Scenario Planner, all dependent calculations (promo sales, lost sales, net revenue) shall recalculate within 2 seconds"
+      
+      - id: non-functional-requirements
+        title: Non-Functional Requirements
+        type: structured-list
+        instruction: |
+          Define quality attributes: performance, scalability, security,
+          reliability, usability, maintainability.
+        fields:
+          - requirement_id: "NFR-XXX"
+          - category: "Performance/Security/Usability/etc."
+          - requirement: "Specific requirement statement"
+          - measurement: "How to measure compliance"
+          - target: "Quantified target"
+          - priority: "Must/Should/Could"
+        examples:
+          - requirement_id: "NFR-001"
+            category: "Performance"
+            requirement: "Page load time for Historical Performance dashboard"
+            measurement: "P95 load time from Google Analytics"
+            target: "< 3 seconds"
+            priority: "Must"
+          - requirement_id: "NFR-002"
+            category: "Security"
+            requirement: "Data encryption at rest and in transit"
+            measurement: "Security audit compliance"
+            target: "TLS 1.3, AES-256"
+            priority: "Must"
+      
+      - id: data-requirements
+        title: Data Requirements
+        type: structured
+        instruction: |
+          Specify data needs: sources, quality, volume, refresh frequency.
+        fields:
+          - data_sources: "Where data comes from"
+          - data_volume: "Expected data volume (rows, GB, etc.)"
+          - data_quality: "Required accuracy, completeness"
+          - refresh_frequency: "How often data updates"
+          - retention_policy: "How long to keep historical data"
+          - privacy_compliance: "GDPR, CCPA, etc. considerations"
+      
+      - id: integration-requirements
+        title: Integration Requirements
+        type: table
+        columns: [System, Integration Type, Data Flow, Frequency, SLA, Owner]
+        instruction: |
+          Document all system integrations required.
+        examples:
+          - ["Amazon SP-API", "REST API", "Pull sales data", "Daily", "99.5% uptime", "Data Eng"]
+
+#=============================================================================
+# SECTION 5: USER EXPERIENCE & DESIGN
+#=============================================================================
+  - id: user-experience
+    title: User Experience & Interface Design
+    instruction: |
+      Define UX vision, key workflows, and UI requirements.
+      This guides designers but isn't a detailed mockup.
+    sections:
+      - id: ux-vision
+        title: UX Vision & Design Philosophy
+        type: paragraphs
+        instruction: |
+          Articulate the desired user experience. What should users FEEL
+          when using this product?
+      
+      - id: user-workflows
+        title: Key User Workflows
+        type: structured-list
+        instruction: |
+          Document critical user journeys step-by-step.
+        fields:
+          - workflow_name: "Name of workflow"
+          - trigger: "What initiates this workflow"
+          - steps: "Numbered list of user actions"
+          - success_state: "What indicates successful completion"
+          - error_handling: "What happens if something goes wrong"
+        examples:
+          - workflow_name: "Create and Compare Scenarios"
+            trigger: "User clicks 'New Scenario' button"
+            steps: "1. Select base scenario, 2. Name new scenario, 3. Edit discount %, 4. View comparison, 5. Download results"
+            success_state: "User sees side-by-side scenario comparison with net revenue impact"
+      
+      - id: information-architecture
+        title: Information Architecture
+        type: hierarchical-list
+        instruction: |
+          Define navigation structure and content organization.
+        examples:
+          - "Home Dashboard"
+          - "Historical Performance"
+          - "  └─ By Product Line"
+          - "  └─ By Campaign"
+          - "Scenario Planner"
+          - "Data View"
+      
+      - id: core-screens
+        title: Core Screens & Components
+        type: structured-list
+        fields:
+          - screen_name: "Screen/view name"
+          - purpose: "What user accomplishes here"
+          - key_elements: "Primary UI components"
+          - interactions: "User actions available"
+          - states: "Loading, error, empty states"
+        examples:
+          - screen_name: "Historical Performance Dashboard"
+            purpose: "Review past promotional performance"
+            key_elements: "Filter bar, data table, KPI cards, export button"
+            interactions: "Filter by year/product, sort columns, download CSV"
+            states: "Loading spinner, 'No data' message, error banner"
+      
+      - id: ui-requirements
+        title: UI Requirements & Standards
+        type: structured
+        fields:
+          - accessibility: "WCAG compliance level (A/AA/AAA)"
+          - responsive_design: "Breakpoints and device support"
+          - browser_support: "Minimum browser versions"
+          - internationalization: "Languages, localization needs"
+          - branding: "Style guide, design system reference"
+      
+      - id: interaction-patterns
+        title: Key Interaction Patterns
+        type: bullet-list
+        instruction: |
+          Document standard interaction paradigms used throughout.
+        examples:
+          - "Filters: Multi-select dropdowns with 'Apply' button"
+          - "Comparison: Side-by-side cards with highlight on differences"
+          - "Feedback: Toast notifications for actions, modals for errors"
+
+#=============================================================================
+# SECTION 6: TECHNICAL ARCHITECTURE (HIGH-LEVEL)
+#=============================================================================
+  - id: technical-overview
+    title: Technical Architecture Overview
+    instruction: |
+      High-level technical approach. Detailed tech specs live in separate docs.
+    sections:
+      - id: architecture-approach
+        title: Architecture Approach
+        type: paragraphs
+        instruction: |
+          Describe overall technical approach at a level PMs and stakeholders
+          can understand. Include diagrams if helpful.
+      
+      - id: tech-stack
+        title: Technology Stack
+        type: structured
+        fields:
+          - frontend: "UI framework (React, Vue, etc.)"
+          - backend: "Server framework (Node, Django, etc.)"
+          - database: "Database technology"
+          - infrastructure: "Hosting (AWS, GCP, on-prem)"
+          - third_party: "External services/APIs"
+      
+      - id: technical-risks
+        title: Technical Risks & Mitigation
+        type: table
+        columns: [Risk, Likelihood, Impact, Mitigation Strategy, Contingency Plan]
+        examples:
+          - ["Data pipeline delays", "Medium", "High", "Parallel manual upload option", "Delay launch by 2 weeks"]
+      
+      - id: scalability-plan
+        title: Scalability & Performance Plan
+        type: paragraphs
+        instruction: |
+          How will the system handle growth? What are scalability limits?
+
+#=============================================================================
+# SECTION 7: GO-TO-MARKET & LAUNCH
+#=============================================================================
+  - id: launch-strategy
+    title: Launch Strategy & Go-to-Market
+    instruction: |
+      Plan for getting this product into users' hands successfully.
+    sections:
+      - id: launch-timeline
+        title: Launch Timeline & Milestones
+        type: table
+        columns: [Milestone, Target Date, Owner, Status, Success Criteria]
+        examples:
+          - ["Alpha Release (internal)", "2026-01-27", "PM", "On Track", "Core workflows functional"]
+          - ["Beta Release (select users)", "2026-02-15", "PM", "Pending", "CSAT ≥ 3.5/5"]
+          - ["General Availability", "2026-03-31", "PM", "Planned", "No P0/P1 bugs"]
+      
+      - id: rollout-plan
+        title: Rollout Plan
+        type: structured
+        fields:
+          - rollout_type: "Big Bang / Phased / Beta / Dark Launch"
+          - target_users: "Who gets access when"
+          - communication_plan: "How users will be informed"
+          - training_plan: "Documentation, webinars, support"
+          - support_plan: "How users get help"
+      
+      - id: success-tracking
+        title: Success Tracking & Monitoring
+        type: structured
+        fields:
+          - analytics_setup: "What events/metrics to track"
+          - dashboards: "Where metrics are visible"
+          - review_cadence: "Weekly/monthly metric reviews"
+          - iteration_plan: "How learnings feed into roadmap"
+      
+      - id: feedback-loops
+        title: User Feedback Mechanisms
+        type: bullet-list
+        instruction: |
+          How will we gather ongoing user feedback post-launch?
+        examples:
+          - "In-app NPS survey (quarterly)"
+          - "Quarterly user interviews (5-10 users)"
+          - "Support ticket analysis (ongoing)"
+          - "Usage analytics (dashboards monitored weekly)"
+
+#=============================================================================
+# SECTION 8: RISKS & MITIGATION
+#=============================================================================
+  - id: risk-management
+    title: Risk Management
+    sections:
+      - id: risk-register
+        title: Risk Register
+        type: table
+        columns: [Risk ID, Risk Description, Category, Likelihood, Impact, Mitigation Strategy, Owner, Status]
+        instruction: |
+          Comprehensive risk tracking. Update as project progresses.
+        examples:
+          - ["RISK-001", "Reseller inventory data unreliable", "Data Quality", "High", "Medium", "Build model with confidence intervals; flag low-confidence predictions", "Data Eng", "Open"]
+          - ["RISK-002", "Key stakeholder change", "Business", "Low", "High", "Document decisions; maintain stakeholder alignment", "PM", "Monitoring"]
+      
+      - id: contingency-plans
+        title: Contingency Plans
+        type: structured-list
+        instruction: |
+          Pre-defined responses to major risks if they materialize.
+        fields:
+          - scenario: "What goes wrong"
+          - trigger: "How we know it happened"
+          - response: "Immediate action plan"
+          - impact: "Effect on timeline/scope"
+
+#=============================================================================
+# SECTION 9: TEAM & GOVERNANCE
+#=============================================================================
+  - id: team-governance
+    title: Team Structure & Governance
+    sections:
+      - id: team-structure
+        title: Team Structure & Roles
+        type: table
+        columns: [Role, Name, Responsibilities, Availability]
+        examples:
+          - ["Product Manager", "{{pm_name}}", "Vision, prioritization, stakeholder management", "Full-time"]
+          - ["Tech Lead", "TBD", "Architecture, technical decisions", "50%"]
+          - ["Designer", "TBD", "UX/UI design, user research", "30%"]
+      
+      - id: decision-making
+        title: Decision-Making Framework
+        type: structured
+        fields:
+          - decision_types: "What kinds of decisions (scope, technical, design)"
+          - decision_owner: "Who has final say"
+          - escalation_path: "When/how to escalate"
+          - daci_model: "Driver, Approver, Contributors, Informed for key decisions"
+      
+      - id: communication-plan
+        title: Communication & Meeting Cadence
+        type: table
+        columns: [Meeting Type, Frequency, Participants, Purpose]
+        examples:
+          - ["Sprint Planning", "Biweekly", "Full Team", "Plan upcoming sprint work"]
+          - ["Stakeholder Review", "Monthly", "PM + Stakeholders", "Demo progress, gather feedback"]
+      
+      - id: change-control
+        title: Change Control Process
+        type: paragraphs
+        instruction: |
+          How are scope changes requested, evaluated, and approved?
+          What's the threshold for requiring formal approval?
+
+#=============================================================================
+# SECTION 10: APPENDICES & REFERENCES
+#=============================================================================
+  - id: appendices
+    title: Appendices & References
+    sections:
+      - id: glossary
+        title: Glossary
+        type: definition-list
+        instruction: |
+          Define domain-specific terms and acronyms.
+        examples:
+          - term: "Lost Sales"
+            definition: "Revenue decline post-promotion due to grey market reseller inventory release"
+          - term: "Promo Lift"
+            definition: "Incremental sales volume driven by promotional discount"
+      
+      - id: references
+        title: References & Related Documents
+        type: bullet-list
+        instruction: |
+          Link to supporting materials.
+        examples:
+          - "[Business Requirements Document](confluence-link)"
+          - "[Technical Design Document](confluence-link)"
+          - "[User Research Report](confluence-link)"
+          - "[Competitive Analysis](confluence-link)"
+      
+      - id: changelog
+        title: Change Log
+        type: table
+        columns: [Date, Version, Description, Author, Approvers]
+        instruction: |
+          Track all changes to this PRD over time.
+        examples:
+          - ["2026-01-15", "1.0", "Initial draft", "PM Name", "N/A"]
+          - ["2026-01-20", "1.1", "Added NFRs based on eng review", "PM Name", "Tech Lead"]
+      
+      - id: approval-sign-off
+        title: Approval & Sign-Off
+        type: table
+        columns: [Stakeholder, Role, Approval Status, Date, Signature/Comments]
+        instruction: |
+          Formal approval tracking for key stakeholders.
+
+#=============================================================================
+# METADATA & CONFIGURATION
+#=============================================================================
+metadata:
+  priority_levels: ["Must-Have (P0)", "Should-Have (P1)", "Nice-to-Have (P2)", "Future (P3)"]
+  moscow_method: ["Must Have", "Should Have", "Could Have", "Won't Have"]
+  story_point_scale: [1, 2, 3, 5, 8, 13, 21]
+  risk_levels: ["Low", "Medium", "High", "Critical"]
+  
+validation_rules:
+  - Every requirement must have a priority
+  - Every user story must have acceptance criteria
+  - Every risk must have a mitigation strategy
+  - Every success metric must be quantifiable
+  - MVP scope must be achievable within target timeline
+
+output_enhancements:
+  - Generate executive summary automatically from key sections
+  - Create JIRA epic/story import file
+  - Export requirements traceability matrix
+  - Generate stakeholder presentation deck
+```
