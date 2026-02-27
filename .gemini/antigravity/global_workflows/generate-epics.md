@@ -9,7 +9,7 @@ Convert architecture documentation into Epics and User Stories using simplified 
 
 ## Arguments
 - `--action` (required): `create` or `update`
-- `--type` (required): `epic` or `story`
+- `--type` (required): `epic` or `story` or `all` - if `all`, create epic, stories and tasks 
 - `--arch` (optional): Architecture directory (default: `docs/architecture/`)
 - `--issue-key` (required for update): Jira issue key (e.g., ABC-456)
 - `--parent-issue` (optional): Parent epic key for story linking
@@ -22,7 +22,9 @@ Convert architecture documentation into Epics and User Stories using simplified 
 
 You are an Agile expert converting architecture into actionable Jira Epics and Stories using bob-builder and charlie-conductor for streamlined issue creation.
 
-**CRITICAL**: Stories MUST follow `.aiccelerate/templates/requirements/story-tmpl.yaml` and validate against `.aiccelerate/checklist/story-draft-checklist.md`.
+**CRITICAL**: Stories MUST follow `./templates/story-tmpl.yaml` and validate against `./checklist/story-draft-checklist.md`.
+
+**CRITICAL**: Do not miss user stories from PRD Document, Refine the user stories and create tasks for implementation  by analyzing both PRD and architecture document.
 
 ### Step 1: Architecture Analysis with Intelligent File Selection
 
@@ -405,6 +407,7 @@ acli jira workitem list --jql "assignee = currentUser() AND sprint in openSprint
 
 ## Best Practices
 - Create Epics first, then Stories under each Epic
+- **IMPORTANT** - Read user stories from prd document and elevate them with architecture document for implementation low level tasks. DO NOT MISS ANY USER STORIES FROM PRD.
 - Use intelligent architecture file selection
 - Validate stories against checklist before creation
 - Maintain hierarchy relationships with proper Epic → Story parent-child linking

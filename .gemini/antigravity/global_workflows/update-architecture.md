@@ -1,11 +1,12 @@
 ---
-description: Generate Architecture Document
+description: Update Architecture Document
 ---
 
-# Generate Fullstack Architecture Document
+# Update Architecture Document
 
 ## Overview
-This action generates a comprehensive fullstack architecture document that covers all technical aspects of the system design. The document follows the structured template defined in `./templates/arc42-architecture-tmpl.yaml` and provides detailed guidance for AI-driven development.
+This action updates and re-aligns the architecture document from a PRD document.
+It will identify the alignment between PRD and current architecture document generated in `i2o-feature-docs/features/{project_dir}/docs/design/architecture.md`. The document strictly follows the structured template defined in `./templates/arc42-architecture-tmpl.yaml` and provides detailed guidance for AI-driven development.
 
 ## Input Required
 - **Product Requirements Document (PRD)**: Detailed functional and non-functional requirements from `docs/prd.md`. Check in i2o-feature-ai-docs/features/{project_dir}/docs/requirements/prd.md
@@ -14,7 +15,7 @@ This action generates a comprehensive fullstack architecture document that cover
 
 ## Process
 
-### Step 1: Initial Setup and Context Gathering
+### Step 1: Analyze the existing architecture document
 1. Request and review all input documents (Project Idea, PRD, Frontend Spec)
 2. Check for starter templates or existing projects
 3. Extract key architectural drivers:
@@ -212,7 +213,21 @@ Based on chosen API style:
    - Provide confidence score for implementation readiness
 
 ## Output Format
-Generate a complete architecture document in Markdown following the template structure.
+Generate a complete architecture document in Markdown following the template structure and cover below points:
+1. Introduction with starter template decisions
+2. High-level architecture with diagrams
+3. Definitive technology stack table
+4. Data models and database schemas
+5. API specifications
+6. Component architecture (frontend and backend)
+7. UI flows and mockups
+8. Integration patterns
+9. Deployment architecture
+10. Security and performance considerations
+11. Testing strategy
+12. Coding standards
+13. Monitoring approach
+14. **Checklist Results Report** (from architect-checklist.md validation)
 
 ## Key Principles
 1. **Comprehensiveness**: Cover all aspects of fullstack architecture

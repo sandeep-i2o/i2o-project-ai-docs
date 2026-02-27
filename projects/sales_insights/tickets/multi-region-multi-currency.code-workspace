@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../../frontend/frontendapplication-i2oretail"
+		},
+		{
+			"path": "../../../../../backend/i2o-scheduler"
+		}
+	],
+	"settings": {}
+}

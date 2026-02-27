@@ -1,0 +1,193 @@
+template:
+  id: arc42-architecture-v1
+  name: arc42 Architecture Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/architecture.md
+    title: "{{project_name}} Architecture Document (arc42)"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+
+sections:
+  - id: intro-goals
+    title: 1. Introduction and Goals
+    instruction: |
+      Ask if PRD and Project Brief are available. Review them to gather context on business goals, essential features, and stakeholders.
+      Describe the driving forces that architects must consider.
+    sections:
+      - id: requirements-overview
+        title: 1.1 Requirements Overview
+        type: paragraphs
+        instruction: |
+          Short description of the functional requirements and driving forces. 
+          Focus on why the system is being created/modified.
+          Link to the PRD (docs/prd.md) for details.
+      - id: quality-goals
+        title: 1.2 Quality Goals
+        type: table
+        columns: [Priority, Quality Goal, Scenario/Motivation]
+        instruction: |
+          The top 3-5 quality goals (e.g., performance, security, maintainability).
+          Ordered by priority for the major stakeholders.
+      - id: stakeholders
+        title: 1.3 Stakeholders
+        type: table
+        columns: [Role/Name, Contact, Expectations]
+        instruction: |
+          Overview of person, roles, or organizations involved or affected.
+      - id: changelog
+        title: Change Log
+        type: table
+        columns: [Date, Version, Description, Author]
+        instruction: Track document versions and changes.
+
+  - id: architecture-constraints
+    title: 2. Architecture Constraints
+    type: table
+    columns: [Constraint, Background/Rationale]
+    instruction: |
+      List any requirements that constrain design decisions (e.g., technical, organizational, or political constraints).
+    examples:
+      - ["GCP Environment", "Organization uses Google Cloud Platform for all services"]
+      - ["ISO 27001", "Compliance requirement for data handling"]
+
+  - id: context-scope
+    title: 3. Context and Scope
+    instruction: |
+      Delimits the system from its communication partners.
+    sections:
+      - id: business-context
+        title: 3.1 Business Context
+        instruction: |
+          Specify communication partners (users, IT-systems) and domain-specific I/O.
+          Consider using a Mermaid diagram to show the system as a black box.
+        type: table
+        columns: [Communication Partner, Inputs, Outputs]
+      - id: technical-context
+        title: 3.2 Technical Context
+        instruction: |
+          Describe the technical interfaces (channels, protocols, media) linking the system to its environment.
+        type: table
+        columns: [Neighboring System, Channel/Protocol, Details]
+
+  - id: solution-strategy-and-project-modules
+    title: 4. Solution Strategy & Project Modules
+    type: paragraphs
+    instruction: |
+      Summary of fundamental decisions and strategies.
+      Mention: key technology choices, top-level decomposition (e.g., microservices), and how quality goals (section 1.2) are addressed.
+      Also, list the project modules and their responsibilities.
+
+  - id: building-block-view
+    title: 5. Building Block View
+    instruction: |
+      Static decomposition of the system.
+    sections:
+      - id: level-1
+        title: 5.1 Level 1: Whitebox Overall System
+        instruction: |
+          High-level overview of the system structure.
+          Include a Mermaid diagram (graph) showing the major building blocks and their dependencies.
+        sections:
+          - id: architecture-diagram
+            title: Overall System Diagram
+            type: mermaid
+            mermaid_type: graph
+          - id: blackbox-descriptions
+            title: Contained Building Blocks
+            type: table
+            columns: [Name, Responsibility]
+            instruction: Black box description of level 1 building blocks.
+      - id: level-2
+        title: 5.2 Level 2
+        repeatable: true
+        instruction: |
+          Zoom into important building blocks of level 1.
+          Only describe surprising, risky, or complex blocks.
+        sections:
+          - id: level-2-whitebox
+            title: "White Box: {{building_block_name}}"
+            type: paragraphs
+      - id: level-3
+        title: 5.3 Level 3
+        repeatable: true
+        instruction: Zoom into selected building blocks of level 2 if necessary.
+
+  - id: runtime-view
+    title: 6. Runtime View
+    repeatable: true
+    instruction: |
+      Describe interactions of building blocks for important scenarios.
+      Use Mermaid sequence diagrams for critical workflows.
+    sections:
+      - id: scenario
+        title: "{{scenario_name}}"
+        type: mermaid
+        mermaid_type: sequence
+
+  - id: deployment-view
+    title: 7. Deployment View
+    instruction: |
+      Technical infrastructure and mapping of software building blocks.
+    sections:
+      - id: infrastructure-level-1
+        title: 7.1 Infrastructure Level 1
+        type: paragraphs
+        instruction: Distribution to locations, environments (Dev/Test/Prod), and hardware elements.
+      - id: infrastructure-level-2
+        title: 7.2 Infrastructure Level 2
+        repeatable: true
+        instruction: Zoom into specific infrastructure elements if needed.
+
+  - id: cross-cutting-concepts
+    title: 8. Cross-cutting Concepts
+    repeatable: true
+    instruction: |
+      Describe practices, patterns, or regulations related to multiple building blocks.
+      Examples: Security, Logging, Data Consistency, UX patterns.
+    sections:
+      - id: concept
+        title: "{{concept_name}}"
+        type: paragraphs
+
+  - id: architecture-decisions
+    title: 9. Architecture Decisions
+    instruction: |
+      Document important, expensive, or risky decisions.
+      Consider using the ADR (Architecture Decision Record) format.
+    type: bullet-list
+    template: "- **{{decision_title}}:** {{rationale}}"
+
+  - id: quality-requirements
+    title: 10. Quality Requirements
+    sections:
+      - id: quality-overview
+        title: 10.1 Quality Requirements Overview
+        type: paragraphs
+      - id: quality-scenarios
+        title: 10.2 Quality Scenarios
+        type: table
+        columns: [ID, Name, Stimulus, Response, Metric]
+        instruction: Specific and measurable scenarios to evaluate quality goals.
+
+  - id: risks-technical-debt
+    title: 11. Risks and Technical Debt
+    type: table
+    columns: [Risk/Debt, Impact, Mitigation Strategy]
+    instruction: Identified technical risks or debts, ordered by priority.
+
+  - id: glossary
+    title: 12. Glossary
+    type: table
+    columns: [Term, Definition]
+    instruction: Domain and technical terms definition.
+
+  - id: next-steps
+    title: Next Steps
+    sections:
+      - id: architect-prompt
+        title: Architect Prompt
+        instruction: Prompt for the next agent to begin implementation or detailed design.

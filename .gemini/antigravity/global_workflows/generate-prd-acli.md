@@ -1,19 +1,18 @@
 ---
-description: Generate Product Requirements Document
+description: Generate PRD ACLI
 ---
 
 # Generate Product Requirements Document (PRD)
 
 ## Overview
-This action generates a comprehensive Product Requirements Document (PRD) based on a initial idea document provided by the user. The Generated PRD should strictly follow the structured template defined in `./templates/i2o-prd-template.yaml`. Look for the templates, skills in Antigravity gemini system root folder ~/.gemini/antigravity/**
+This action generates a comprehensive Product Requirements Document (PRD) based on a initial idea document provided by the user. The PRD follows the structured template defined in `./templates/prd-tmpl-i2o.yaml`. 
 
 IMPORTANT: Use the skill sam-strategist.
 
 ## Input Required
 
 - **Project Name**: Project name from i2o-feature-ai-docs/features (required), If user doesn't provide this parameter, explicitly ask user to select one feature project
-- **Project Seed Documents**: Check all documents inside i2o-feature-ai-docs/features/{{project_name}}/docs/requirements/ for generating the PRD. It will have all initial research documents.
-- **Technical Preferences** (optional): If available, technical choices and constraints
+- **Confluence Page**: Fetch the confluence page from the link e.g. https://i2oretail.atlassian.net/wiki/spaces/IR/pages/2487812114/7.5+Price+Monitor+Requirements
 
 
 ## Output
@@ -24,8 +23,10 @@ Strictly generate the prd.md in i2o-feature-ai-docs/features/{{project_name}}/do
 ## Process
 
 ### Step 1: Gather Project Information
-1. Check all the project idea document in the docs/requirements folder
-2. Extract key information:
+1. Use the `acli` command to pull the content of the provided Confluence Page link. Ensure you maintain the rich formatting and properly include/download any images from the page.
+2. Save this extracted content to a file named `extracted-prd.md` in the `i2o-feature-ai-docs/features/{{project_name}}/docs/requirements/` directory.
+3. Read the `extracted-prd.md` along with any other project idea documents in the docs/requirements folder.
+4. Extract key information:
    - Project name and vision
    - Problem statement
    - Target users
@@ -39,8 +40,16 @@ Strictly generate the prd.md in i2o-feature-ai-docs/features/{{project_name}}/do
 
 **CRITICAL: Follow these epic creation rules:**
 - Create only one epic for one PRD
-- Create user stories with mockup images
-- DO NOT MISS ANY USER STORIES THAT IS PRESENT IN SEED DOCUMENTS UNDER REQUIREMENTS FOLDER
+
+For each epic:
+- Title and 2-3 sentence goal
+- Sequentially ordered stories
+- Each story includes:
+  - User story format (As a... I want... So that...)
+  - Numbered acceptance criteria
+  - Stories sized for 2-4 hour AI agent sessions
+  - Vertical slices of functionality
+- STRICTLY include all user stories from the documents if they are present
 
 ### Step 3: Quality Checks
 1. Run PM checklist validation
@@ -48,6 +57,9 @@ Strictly generate the prd.md in i2o-feature-ai-docs/features/{{project_name}}/do
 3. Verify epic/story sequencing logic
 4. Check for completeness and clarity
 
+### Step 4: Generate Next Steps
+- Create UX Expert prompt (if UI/UX requirements exist)
+- Create Architect prompt for technical design
 
 ## Output Format
 Generate a complete PRD in Markdown format following the structure as defined in template

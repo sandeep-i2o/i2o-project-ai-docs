@@ -1,0 +1,500 @@
+template:
+  id: i2o-prd-template-v1
+  name: i2o Product Requirements Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: "prd/[epic_id]-prd.md"
+    title: "[epic_name] – Product Requirements Document"
+  products:
+    - code: GA
+      name: Growth Accelerator
+    - code: BP
+      name: Brand Protector
+    - code: PR
+      name: Pricing
+  metadata:
+    epic_id_format: "[Product]-[Module]-[###]"
+    story_id_format: "[Epic-ID]-US[###]"
+    screenshot_format: "[StoryID]_[ScreenName]_[State].png"
+
+workflow:
+  mode: interactive
+  validation: po-sign-off
+
+#=============================================================================
+# SECTION A: EPIC DEFINITION
+#=============================================================================
+sections:
+  - id: section-a
+    title: "Section A: Epic Definition"
+    priority: critical
+    type: metadata-table
+    fields:
+      - id: epic_id
+        label: Epic ID
+        format: "[Product]-[Module]-[###]"
+        example: "BP-CD-003"
+        required: true
+
+      - id: epic_name
+        label: Epic Name
+        format: "[Product] - [Module] - [Description]"
+        required: true
+
+      - id: epic_type
+        label: Epic Type
+        type: single-select
+        options: [Cross-Product, Product-Level, New Module, Module Enhancement]
+        required: true
+
+      - id: parent_epic
+        label: Parent Epic
+        format: "[Epic ID] or N/A"
+        required: true
+
+      - id: products
+        label: Product(s)
+        type: multi-select
+        options: [Growth Accelerator, Brand Protector, Pricing]
+        required: true
+
+      - id: modules
+        label: Module(s)
+        type: free-text
+        instruction: "List all modules this epic touches"
+        required: true
+
+      - id: flags
+        label: Flags
+        type: multi-boolean
+        items:
+          - is_new_module: "Is New Module?"
+          - cross_module: "Cross-Module?"
+          - cross_product: "Cross-Product?"
+        required: true
+
+      - id: priority
+        label: Priority
+        type: single-select
+        options:
+          - P0: Critical
+          - P1: High
+          - P2: Medium
+          - P3: Low
+        required: true
+
+      - id: target_release
+        label: Target Release
+        format: "Q# YYYY"
+        required: true
+
+      - id: epic_owner
+        label: Epic Owner
+        fields:
+          - pm_name: "[PM Name]"
+          - tech_lead: "[Eng Name]"
+        required: true
+
+      - id: timeline
+        label: Timeline
+        format: "[X] weeks"
+        required: true
+
+      - id: known_blockers
+        label: Known Blockers
+        instruction: "External dependency, infrastructure gap, or N/A"
+        required: true
+
+#=============================================================================
+# SECTION B: PROBLEM & OBJECTIVES
+#=============================================================================
+  - id: section-b
+    title: "Section B: Problem & Objectives"
+    priority: critical
+    sections:
+      - id: b1-problem-statement
+        title: "B1. Problem Statement"
+        instruction: "What problem are we solving? Be specific with data — no vague statements."
+        type: structured
+        fields:
+          - problem_summary:
+              type: free-text
+              instruction: "Core problem in 1-2 sentences, backed by data or observed evidence"
+          - pain_points:
+              type: bullet-list
+              min_items: 3
+              instruction: "Each pain point must include its business impact"
+
+      - id: b2-why-now
+        title: "B2. Why Now?"
+        type: single-select-with-detail
+        options: [Customer demand, Revenue, Competition, Compliance]
+        instruction: "Select the primary driver and explain with specifics — avoid vague answers"
+
+      - id: b3-who-benefits
+        title: "B3. Who Benefits & How?"
+        type: table
+        columns: [Persona, Pain, "Solution Benefit", Impact]
+        instruction: "Impact must quantify time saved or revenue impact — not qualitative"
+        min_rows: 2
+        example:
+          - [Brand Manager, "No visibility into reseller violations", "Automated violation detection", "Saves 3hrs/week"]
+
+      - id: b4-success-metrics
+        title: "B4. Success Metrics"
+        type: table
+        columns: [Metric, "Baseline → Target", Timeline, Measurement]
+        instruction: "All metrics must be SMART — quantified with baseline, target, and timeline"
+        min_rows: 2
+        example:
+          - ["Violations detected", "Manual: 50/week → Automated: 200/week", "30 days post-launch", "Dashboard count"]
+
+      - id: b5-scope
+        title: "B5. Scope"
+        type: structured
+        fields:
+          - in_scope:
+              type: bullet-list
+              min_items: 3
+              max_items: 5
+              instruction: "Key features included in this epic"
+          - out_of_scope:
+              type: bullet-list-with-reason
+              instruction: "Each exclusion must include reason: Future phase / MVP constraint"
+
+#=============================================================================
+# SECTION C: USER STORIES
+#=============================================================================
+  - id: section-c
+    title: "Section C: User Stories"
+    priority: critical
+    type: repeating
+    instruction: "Repeat this block for each user story. Each story is self-contained."
+    story:
+      - id: story-header
+        fields:
+          - story_number:
+              format: "User Story #[N]"
+          - story_id:
+              format: "[Epic-ID]-US[###]"
+              example: "BP-CD-003-US001"
+          - title:
+              format: "[Short descriptive title]"
+
+      - id: story-statement
+        title: Story
+        type: user-story
+        required: true
+        format: |
+          As a [role],
+          I want to [action],
+          So that [outcome].
+
+      - id: story-metadata
+        title: Metadata
+        type: inline-tags
+        fields:
+          - story_id:
+              format: "[Epic-US###]"
+          - modules:
+              type: list
+          - priority:
+              type: single-select
+              options: [P0, P1, P2, P3]
+          - type:
+              type: single-select
+              options: [UI, Backend, DS, Full-stack]
+
+      - id: dependencies
+        title: Dependencies
+        type: structured
+        fields:
+          - depends_on:
+              format: "[Story ID or N/A]"
+              reason_required: true
+              instruction: "State WHY this story depends on the other — not just the ID"
+          - blocks:
+              format: "[Story ID or N/A]"
+              reason_required: true
+          - related:
+              format: "[Story ID or N/A]"
+
+      - id: requirements
+        title: Requirements
+        instruction: "Fill in sub-sections relevant to your story type. Skip sections that don't apply."
+        sections:
+
+          # --- UI / Full-stack ---
+          - id: user-flow
+            title: User Flow
+            applies_to: [UI, Full-stack]
+            type: numbered-steps
+            format: "[User action] → [System response]"
+            min_steps: 3
+
+          - id: ui-screens
+            title: UI Screens & Interactions
+            applies_to: [UI, Full-stack]
+            type: repeating-screens
+            screenshot_format: "[StoryID]_[ScreenName]_[State].png"
+            screen:
+              fields:
+                - screen_name: "[Screen Name/State]"
+                - screenshot: "[Filename]"
+                - context: "How user arrives at this screen"
+                - key_elements:
+                    type: numbered-list
+                    format: "[Element Name] - [Purpose]"
+                    min_items: 3
+                - interactions:
+                    type: tree
+                    legend:
+                      "👆": Click
+                      "🖱️": Hover
+                      "⌨️": Type
+                      "📤": Submit
+                      "✅": Success
+                      "❌": Error
+                      "⏳": Loading
+                      "📱": Navigate
+                - navigation: "Where next → Screen [N+1]"
+
+          - id: validation-rules
+            title: Validation Rules
+            applies_to: [UI, Full-stack]
+            type: table
+            columns: [Field, Rule, "Error Message", Display]
+
+          # --- Backend / Full-stack ---
+          - id: business-logic-flow
+            title: Business Logic Flow
+            applies_to: [Backend, Full-stack]
+            type: numbered-flow
+            steps:
+              - "Trigger/Input"
+              - "Validation"
+              - "Processing logic"
+              - "Database operations"
+              - "Output/response"
+
+          - id: data-sources
+            title: Data Sources
+            applies_to: [Backend, Full-stack]
+            type: table
+            columns: [Table, Purpose, "Key Fields"]
+
+          - id: kpis-calculations
+            title: KPIs & Calculations
+            applies_to: [Backend, Full-stack]
+            type: table
+            columns: ["KPI/Metric", "Source Table(s)", "Calculation Logic"]
+            instruction: "Calculation logic in plain language — no SQL queries"
+
+          - id: business-rules
+            title: Business Rules
+            applies_to: [Backend, Full-stack]
+            type: if-then-else
+            format: |
+              Rule: [Description]
+                IF [condition] THEN [action]
+                ELSE IF [condition] THEN [action]
+                ELSE [default]
+            example: "Total Impact = (24 violations × $500) + (8 counterfeits × $1200) = $21,600"
+
+          # --- Data Science ---
+          - id: ds-objective
+            title: DS Objective
+            applies_to: [DS]
+            type: free-text
+            instruction: "What the model/algorithm achieves — no core algorithm or implementation details"
+
+          - id: preprocessing-inputs
+            title: Preprocessing (Inputs)
+            applies_to: [DS]
+            type: table
+            columns: ["Input Data", Source, Type, Example, Purpose]
+
+          - id: expected-output
+            title: Expected Output
+            applies_to: [DS]
+            type: json-example
+            required_fields:
+              - field: "representative value"
+              - confidence_score: "0-100"
+              - status: "classification label"
+
+          - id: scoring-mechanism
+            title: Scoring Mechanism
+            applies_to: [DS]
+            type: table
+            columns: [Condition, "Score/Classification", Action]
+
+      - id: corner-cases
+        title: Corner Cases & Error Handling
+        type: table
+        columns: ["#", "What Could Go Wrong", "How Should It Be Handled", "What User Experiences"]
+        min_rows: 10
+        instruction: "Written from user perspective — what goes wrong and how the user experiences it, not how the system logs it"
+        suggested_scenarios:
+          - "User action that fails validation"
+          - "Unexpected or malformed input"
+          - "Missing or incomplete data"
+          - "User lacks permission"
+          - "Network or connectivity issue"
+          - "External service unavailable"
+          - "Simultaneous user actions / race condition"
+          - "Expected data doesn't exist (empty state)"
+          - "User exceeds system limits"
+          - "Operation takes too long (timeout)"
+
+      - id: acceptance-criteria
+        title: Acceptance Criteria
+        type: table
+        columns: ["#", Given-When-Then, Verification]
+        format: "Given [context], When [action], Then [result]"
+        min_rows: 3
+        final_row:
+          id: "AC[N]"
+          statement: "Given all AC pass + QA complete, When PO reviews, Then story = Done"
+          verification: "PO Sign-off"
+
+#=============================================================================
+# SECTION D: RELEASE PLAN & TIMELINE
+#=============================================================================
+  - id: section-d
+    title: "Section D: Release Plan & Timeline"
+    priority: high
+    type: repeating-releases
+    release:
+      fields:
+        - release_number: "Release [N]"
+        - release_name: "[Descriptive name]"
+        - target_date: "[Date]"
+        - goal: "What ships — one sentence"
+        - stories:
+            type: table
+            columns: ["Story ID", Title, Priority, Dependencies, Timeline, Status]
+            status_options:
+              "✅": Done
+              "🔄": In Progress
+              "📋": Backlog
+              "⏸️": Blocked
+              "❌": Cancelled
+        - duration: "[X] weeks"
+        - start_date: "[Date]"
+        - end_date: "[Date]"
+        - timeline_with_dependencies:
+            type: dependency-tree
+            format: |
+              Week [N-M]: [Story ID] ([description])
+                └─ Must complete by [Date]
+        - show_stoppers:
+            type: table
+            columns: ["Show Stopper", "Why It Blocks Release", Owner, "Mitigation if Blocked"]
+            min_rows: 1
+            instruction: "Every release must identify at least one show stopper or explicitly state none"
+        - future_backlog:
+            type: structured
+            required: false
+            instruction: "Optional — items for future consideration beyond this release"
+            format: "[Release N] - [Q# YYYY]: [Feature list]"
+
+#=============================================================================
+# SECTION E: APPENDIX
+#=============================================================================
+  - id: section-e
+    title: "Section E: Appendix"
+    priority: medium
+    sections:
+      - id: e1-glossary
+        title: "E1. Glossary"
+        type: definition-table
+        columns: [Term, Definition]
+        instruction: "Define all domain-specific terms and acronyms used in this PRD"
+
+      - id: e2-references
+        title: "E2. References"
+        type: link-list
+        items:
+          - design: "Figma link"
+          - db_schema: "DB Schema diagram link"
+          - api_docs: "Swagger link"
+          - research: "Research doc link"
+
+      - id: e3-faq
+        title: "E3. FAQ for Developers"
+        type: qa-list
+        instruction: "Answer common developer questions with context and references to relevant PRD sections"
+        format: |
+          Q: [Question developers would ask]?
+          A: [Clear answer with section references]
+
+      - id: e4-changelog
+        title: "E4. Change Log"
+        type: table
+        columns: [Date, Ver, Author, Changes, "Sections Affected"]
+        initial_entry:
+          version: "1.0"
+          changes: "Initial PRD"
+          sections: All
+
+#=============================================================================
+# NAMING CONVENTIONS
+#=============================================================================
+naming_conventions:
+  epic_id: "[Product]-[Module]-[###]"
+  story_id: "[Epic-ID]-US[###]"
+  screenshot: "[StoryID]_[Screen]_[State].png"
+  product_codes:
+    GA: Growth Accelerator
+    BP: Brand Protector
+    PR: Pricing
+
+#=============================================================================
+# PRIORITIES & STATUS CODES
+#=============================================================================
+priorities:
+  P0: Critical
+  P1: Core
+  P2: Important
+  P3: Nice-to-have
+
+status_codes:
+  "✅": Done
+  "🔄": In Progress
+  "📋": Backlog
+  "⏸️": Blocked
+  "❌": Cancelled
+
+#=============================================================================
+# VALIDATION RULES
+#=============================================================================
+validation_rules:
+  must_include:
+    - "Epic ID in correct format: [Product]-[Module]-[###]"
+    - "Epic type selected and all flags set"
+    - "Known blockers identified or explicitly marked N/A"
+    - "Problem statement backed by data (not assumptions)"
+    - "Success metrics with baseline, target, and timeline (SMART)"
+    - "Scope defines both In Scope AND Out of Scope with reasons"
+    - "User story in 'As a... I want... So that...' format"
+    - "Story type tagged in metadata (UI / Backend / DS / Full-stack)"
+    - "All dependencies include reason — not just Story IDs"
+    - "Applicable requirements sub-sections completed for story type"
+    - "Minimum 10 corner cases per story, written from user perspective"
+    - "Acceptance criteria in Given-When-Then format"
+    - "Final AC row is PO Sign-off"
+    - "Show stoppers with mitigation plans per release"
+
+  must_not_include:
+    - "Story points or effort estimates"
+    - "UI specs tables"
+    - "SQL queries"
+    - "API endpoints or API contracts"
+    - "Core algorithm or model implementation details"
+    - "Testing strategy"
+    - "Dependency impact analysis"
+    - "Critical path diagrams"
+    - "Integrations section"
+    - "Executive summary (covered by Section B)"
