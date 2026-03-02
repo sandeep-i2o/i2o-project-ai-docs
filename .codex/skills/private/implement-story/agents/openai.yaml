@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Story"
+  short_description: "Implement Jira issues with architecture and quality gates"
+  default_prompt: "Implement a Jira issue with architecture-first checks, tests, and status updates"

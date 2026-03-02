@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate Jira Tickets"
+  short_description: "Convert architecture docs into Jira epics and stories using acli"
+  default_prompt: "Generate or update Jira epics/stories from architecture docs with progress tracking"

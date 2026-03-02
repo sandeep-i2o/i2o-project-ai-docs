@@ -1,0 +1,3 @@
+display_name: Review Code Skill
+short_description: Architecture/PRD code review with audit report + PR comment.
+default_prompt: Run review-code-skill with: project_name=<name>, branch=<feature>, ticket_id=<ID>, pr_url=<optional>

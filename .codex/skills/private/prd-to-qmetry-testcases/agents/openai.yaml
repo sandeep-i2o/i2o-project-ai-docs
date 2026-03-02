@@ -1,0 +1,4 @@
+interface:
+  display_name: "PRD to QMetry"
+  short_description: "Convert PRD stories to QMetry test cases"
+  default_prompt: "Generate manual QMetry test cases from PRD user stories, review them with the user, and push only after explicit approval"
