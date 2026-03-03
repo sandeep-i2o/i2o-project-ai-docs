@@ -17,8 +17,8 @@ Run a strict, evidence-based review of architecture quality and feasibility agai
 
 Read these files first:
 
-- `i2o-project-docs/projects/{project_name}/docs/design/architecture.md`
-- `i2o-project-docs/projects/{project_name}/docs/design/prd.md`
+- `i2o-project-ai-docs/projects/{project_name}/{release_version}/docs/design/architecture.md`
+- `i2o-project-ai-docs/projects/{project_name}/{release_version}/docs/design/prd.md`
 
 If any file is missing, stop and ask the user for the correct path before continuing.
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Review Remediation"
+  short_description: "Repair architecture docs from review findings"
+  default_prompt: "Apply architecture-review findings to update architecture.md with traceability and clear resolutions."
