@@ -9,7 +9,7 @@
 | Architecture Document | ✅ Complete (2026-03-04) |
 | Architecture Review / Checklist | ✅ Complete (embedded — Section 15, 9/10 confidence) |
 | Epic & Story Generation | ✅ Complete (2026-03-04) — 4 Epics, 11 Stories (local) |
-| Implementation | 🔲 Pending |
+| Implementation | 🔲 In Progress — EPIC-002 (IAC-115) backend deployed |
 
 ## Open Items (Pre-Implementation)
 1. 🔴 **[GATE]** Register `bp_marketplace_overview_card` and `bp_marketplace_overview_table` componentIds in `i2oretail.component` PostgreSQL table — blocks frontend integration testing (STORY-011)
@@ -36,7 +36,7 @@
 | ID | Module | Title |
 |----|--------|-------|
 | EPIC-001 | frontendapplication-i2oretail | Frontend — Marketplace Overview Angular Module |
-| EPIC-002 | i2o-reseller | Backend — Marketplace Overview Sub-Package |
+| EPIC-002 | i2o-reseller | Backend — Marketplace Overview Sub-Package | ✅ Done |
 | EPIC-003 | i2o-scheduler | Scheduler — Weekly KPI Aggregation Task |
 | EPIC-004 | i2o-reseller (config) | Config Registration & Integration Readiness Gate |
 
@@ -48,9 +48,9 @@
 | STORY-003 | EPIC-001 | frontendapplication-i2oretail | Card View — CardList & Card Components | 3 days |
 | STORY-004 | EPIC-001 | frontendapplication-i2oretail | Table View — AG Grid with KPI Columns | 2 days |
 | STORY-005 | EPIC-001 | frontendapplication-i2oretail | Initiate Trial Button + Multi-Brand Dialog | 2 days |
-| STORY-006 | EPIC-002 | i2o-reseller | Sub-Package Scaffold, MarketplaceEnum & DTOs | 1 day |
-| STORY-007 | EPIC-002 | i2o-reseller | GET /marketplace-overview/config Endpoint | 2 days |
-| STORY-008 | EPIC-002 | i2o-reseller | POST /marketplace-overview/initiate-trial + Rate Limit | 2 days |
+| STORY-006 | EPIC-002 | i2o-reseller | Sub-Package Scaffold, MarketplaceEnum & DTOs | ✅ Done |
+| STORY-007 | EPIC-002 | i2o-reseller | GET /marketplace-overview/config Endpoint | ✅ Done |
+| STORY-008 | EPIC-002 | i2o-reseller | POST /marketplace-overview/initiate-trial + Rate Limit | ✅ Done |
 | STORY-009 | EPIC-003 | i2o-scheduler | BigQuery Schema Setup — Sink Table & Audit Log DDL | 1 day |
 | STORY-010 | EPIC-003 | i2o-scheduler | WeeklyAggregationTask Implementation | 3 days |
 | STORY-011 | EPIC-004 | i2o-reseller (config) | componentId Registration — GO/NO-GO Gate | 1–2 days |
