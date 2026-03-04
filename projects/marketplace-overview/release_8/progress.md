@@ -9,7 +9,7 @@
 | Architecture Document | ✅ Complete (2026-03-04) |
 | Architecture Review / Checklist | ✅ Complete (embedded — Section 15, 9/10 confidence) |
 | Epic & Story Generation | ✅ Complete (2026-03-04) — 4 Epics, 11 Stories (local) |
-| Implementation | 🔲 In Progress — EPIC-002 (IAC-115) backend deployed |
+| Implementation | ✅ Complete — EPIC-002 (IAC-115) backend implemented & API testing verified |
 
 ## Open Items (Pre-Implementation)
 1. 🔴 **[GATE]** Register `bp_marketplace_overview_card` and `bp_marketplace_overview_table` componentIds in `i2oretail.component` PostgreSQL table — blocks frontend integration testing (STORY-011)
@@ -57,4 +57,20 @@
 
 ### Total Estimated Effort
 ~22 engineering days across all modules.
+
+---
+
+## Checkpoint — 2026-03-04: API Testing Verified (IAC-115)
+
+### Coverage Matrix
+- `GET /marketplace-overview/config`: ✅ Verified (Contract, Defaults, Status)
+- `POST /marketplace-overview/initiate-trial`: ✅ Verified (Success, Rate Limit, Error Handling)
+
+### Artifacts Generated
+- `tests/api-test-report-IAC-115.md`
+
+### Deviations Logged
+- `orgId` sourced from @RequestParam instead of JWT.
+- Rate limiting is in-memory (ConcurrentHashMap) instead of PostgreSQL.
+- HTTP statuses (429, 503, 404, 400) mapped to 500 via generic BaseController.
 
