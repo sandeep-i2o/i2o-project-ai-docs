@@ -41,7 +41,7 @@ This epic covers all changes inside `i2o-reseller`:
 | DTOs | `MarketplaceConfigResponse.java`, `InitiateTrialRequest.java` |
 | Email service integration | `MarketplaceTrialEmailService` — REST call to `i2o-email-service` |
 | Security | `org_id` from Keycloak token; `brandName` derived server-side; rate limiting (1/hour/marketplace/brand) |
-| Config registration | Register `bp_marketplace_overview_card` and `bp_marketplace_overview_table` componentIds in `i2oretail.component` PostgreSQL table |
+| Config registration | **Owned by EPIC-004 / STORY-011** — see EPIC-004 for componentId registration scope. EPIC-002 must verify that calls to `getCardData`/`getGridCardData` with registered componentIds succeed in DEV as an integration smoke-test (cross-reference only; no duplicate execution). *(Remediates F-L-001, F-H-003)* |
 | Unit tests | JUnit 5 + Mockito ≥ 80% service coverage |
 | Integration tests | `@SpringBootTest` for `MarketplaceOverviewController` with mock BQ + mock PostgreSQL; cross-tenant isolation test |
 
@@ -50,7 +50,7 @@ This epic covers all changes inside `i2o-reseller`:
 - `i2o-master-data` must expose `org_market_mapping` read access (already exists).
 - `i2o-email-service` REST endpoint must be reachable in DEV/QA/PROD.
 - Support team email address (Open Item #3 — 🟡 Medium risk; fallback: placeholder value).
-- componentId registration is a prerequisite for EPIC-001 integration testing.
+- **[Remediates F-H-003]** componentId registration is the single responsibility of **EPIC-004 / STORY-011**. EPIC-001 frontend integration testing is blocked until STORY-011 is deployed to DEV. EPIC-002 integration smoke-tests also depend on STORY-011.
 
 ## Story Breakdown
 

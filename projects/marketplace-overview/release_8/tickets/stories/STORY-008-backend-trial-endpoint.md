@@ -58,8 +58,9 @@ public ResponseEntity<Map<String, Object>> initiateTrial(@Valid @RequestBody Ini
 
 ### Rate Limit Implementation
 
-- Rate limit check against existing PostgreSQL table (preferred) or Guava in-memory cache with TTL 1 hour.
+- **[Remediates A-002]** Rate limit MUST be enforced via a **persistent data store** (PostgreSQL table `marketplace_trial_rate_limit` or equivalent). An in-memory Guava/ConcurrentHashMap cache is NOT acceptable for production because it does not survive restarts and fails in multi-instance deployments.
 - Key: `(orgId, brandId, marketplace)`.
+- Rate limit record: insert a row on first request; reject subsequent requests within 1 hour of `requested_at` timestamp; expire records older than 1 hour.
 - On rate limit exceeded: HTTP 429 with `{ "error": "Trial request already sent. Please wait before sending again." }`.
 
 ## Acceptance Criteria

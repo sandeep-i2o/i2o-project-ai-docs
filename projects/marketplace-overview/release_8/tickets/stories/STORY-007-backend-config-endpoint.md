@@ -77,6 +77,7 @@ public ResponseEntity<MarketplaceConfigResponse> getConfig() {
 7. Request from a user without `brand-protector` role returns HTTP 403.
 8. JUnit 5 unit tests cover service logic with mocked master-data dependency (≥ 80% coverage).
 9. `@SpringBootTest` integration test verifies correct response shape.
+10. **[Remediates F-M-001]** Cross-tenant isolation integration test passes: a request authenticated with `org_A`'s token must NOT return any data rows belonging to `org_B`. Test evidence (CI artifact: test report or log excerpt) must be attached to the PR.
 
 ## Definition of Done Checklist
 
@@ -87,6 +88,7 @@ public ResponseEntity<MarketplaceConfigResponse> getConfig() {
 - [ ] Auth guard `@PreAuthorize("hasRole('brand-protector')")` applied
 - [ ] Unit tests written (≥ 80% coverage)
 - [ ] Integration test written
+- [ ] **[F-M-001]** Cross-tenant isolation integration test written and passing; CI test-report artifact attached to PR
 - [ ] JavaDocs added to all public methods
 
 ## Architecture References

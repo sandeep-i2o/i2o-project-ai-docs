@@ -80,7 +80,8 @@ export interface MarketplaceFilter {
 
 ## User Stories Covered
 
-- **US001** (AC 6–9): Route is gated behind `brand-protector` Keycloak role
+- **US001** (AC 1–9): Route is gated behind `brand-protector` Keycloak role; **Marketplace Overview tab must be inserted into the Benefits top navigation
+and must be hidden for non-BP users** (Remediates F-H-001)
 - **US002** (AC 17–21): Default filter values set correctly; state persists across view toggle
 
 ## Acceptance Criteria
@@ -92,6 +93,8 @@ export interface MarketplaceFilter {
 5. Default filter includes `getLastMonday()` and `getLastSunday()` week range, `viewMode: 'card'`.
 6. Unit tests cover `MarketplaceOverviewApiService` with `HttpClientTestingModule` (≥ 80% coverage).
 7. Unit tests cover `MarketplaceOverviewStateService` state transitions (≥ 80% coverage).
+8. **[Remediates F-H-001]** A "Marketplace Overview" entry is inserted into the Benefits top-navigation menu (e.g., `benefits-nav` component or equivalent); the entry is visible and navigable for users with the `brand-protector` role.
+9. **[Remediates F-H-001]** The Benefits top-nav "Marketplace Overview" entry is NOT rendered (hidden or absent) for users without the `brand-protector` role; UI integration test evidence (screenshot or Cypress assertion) is provided as part of the PR.
 
 ## Definition of Done Checklist
 
@@ -102,6 +105,9 @@ export interface MarketplaceFilter {
 - [ ] State service created with BehaviorSubject pattern and default filter
 - [ ] Unit tests written achieving ≥ 80% coverage on both services
 - [ ] No lint errors; build passes locally
+- [ ] **[F-H-001]** "Marketplace Overview" tab added to Benefits top-navigation component
+- [ ] **[F-H-001]** Tab is conditionally rendered using role guard / `*ngIf` for `brand-protector` role only
+- [ ] **[F-H-001]** UI integration test evidence (screenshot or Cypress assertion) attached to PR showing tab visibility for BP user and tab absence for non-BP user
 
 ## Architecture References
 
