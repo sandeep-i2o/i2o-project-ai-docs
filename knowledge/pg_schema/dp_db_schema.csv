@@ -1,0 +1,883 @@
+database_name,table_name,Column Description,Column Name,Column Type,Constraint,Default Value,Index,Nullable
+i2oretail_dp,account_activity_details,,account_activity_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.account_activity_details_account_activity_id_seq'::regclass),Yes,No
+i2oretail_dp,account_activity_details,,org_id,int4(32),FOREIGN KEY,,No,Yes
+i2oretail_dp,account_activity_details,,client_id,varchar(150),,,No,No
+i2oretail_dp,account_activity_details,,activity_time,timestamp,,,No,Yes
+i2oretail_dp,account_activity_details,,type,varchar(150),,,No,No
+i2oretail_dp,account_activity_details,,activity,varchar(150),,,No,No
+i2oretail_dp,account_activity_details,,source,varchar(150),,,No,Yes
+i2oretail_dp,account_activity_details,,user_id,varchar(150),,,No,No
+i2oretail_dp,account_activity_details,,activity_status,varchar(150),,,No,No
+i2oretail_dp,account_activity_details,,source_ip,varchar(150),,,No,No
+i2oretail_dp,account_brands,,brand_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.brand_id_seq'::regclass),Yes,No
+i2oretail_dp,account_brands,,account_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,account_brands,,brand_name,varchar(100),,,No,Yes
+i2oretail_dp,account_brands,,is_active,varchar(50),,,No,Yes
+i2oretail_dp,account_id_status_logs,,log_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.account_id_status_logs_log_id_seq'::regclass),Yes,No
+i2oretail_dp,account_id_status_logs,,org_name,varchar(150),,,No,No
+i2oretail_dp,account_id_status_logs,,client_id,varchar(150),,,No,No
+i2oretail_dp,account_id_status_logs,,modified_by,varchar(150),,,No,No
+i2oretail_dp,account_id_status_logs,,data_updated,varchar(500),,,No,Yes
+i2oretail_dp,account_id_status_logs,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,account_status,,org_id,int4(32),"FOREIGN KEY, PRIMARY KEY",,Yes,No
+i2oretail_dp,account_status,,program_name,varchar(250),,,No,No
+i2oretail_dp,account_status,,id,varchar(150),"PRIMARY KEY, UNIQUE",,Yes,No
+i2oretail_dp,account_status,,id_type,varchar(250),PRIMARY KEY,,Yes,No
+i2oretail_dp,account_status,,rdp_ip,varchar(150),,,No,Yes
+i2oretail_dp,account_status,,source,varchar(250),,,No,No
+i2oretail_dp,account_status,,status,varchar(250),,,No,Yes
+i2oretail_dp,account_status,,is_primary_id,bool,,,No,Yes
+i2oretail_dp,account_status,,working_id_locked_past,bool,,,No,Yes
+i2oretail_dp,account_status,,id_onboard_date,timestamp,,,No,Yes
+i2oretail_dp,account_status,,locked_date,timestamp,,,No,Yes
+i2oretail_dp,account_status,,single_active_id,bool,,,No,Yes
+i2oretail_dp,account_status,,scope,varchar(250),,,No,Yes
+i2oretail_dp,account_status,,required_access,varchar(250),,,No,Yes
+i2oretail_dp,account_status,,working_access,varchar(250),,,No,Yes
+i2oretail_dp,account_status,,last_updated,timestamp,,,No,Yes
+i2oretail_dp,account_status,,secret_id,varchar(250),,,No,Yes
+i2oretail_dp,account_status,,marketplace_id,int4(32),,,No,Yes
+i2oretail_dp,account_status,,active_id_count,int4(32),,,No,Yes
+i2oretail_dp,account_status,,created_at,timestamp,,,No,Yes
+i2oretail_dp,account_status,,is_active,varchar(100),,,No,Yes
+i2oretail_dp,account_status,,rdp_user_name,varchar(50),,,No,Yes
+i2oretail_dp,account_status,,rdp_password,varchar(50),,,No,Yes
+i2oretail_dp,account_status,,vault_user_id,varchar(50),,,No,Yes
+i2oretail_dp,account_status,,vault_master_password,varchar(50),,,No,Yes
+i2oretail_dp,account_status,,brands,varchar(6000),,,No,Yes
+i2oretail_dp,account_status,,account_metadata,json,,,No,Yes
+i2oretail_dp,account_status,,seller_id,varchar(100),,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,spend,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,clicks,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,period,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,region,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,platform,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,placement,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_id,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,impressions,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,account_name,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_name,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_type,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,portfolio_name,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_status,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,reporting_range,varchar,,,Yes,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_sales,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_end_date,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_targeting,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_start_date,varchar,,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_conversion,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_dpv_clicks,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,campaign_daily_budget,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_units_ordered,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_sales_same_sku,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_sales_new_to_brand,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_units_new_to_brand,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_conversion_same_sku,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_orders_new_to_brand,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_sales_new_to_brand__,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_units_new_to_brand__,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_orders_new_to_brand__,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attributed_units_ordered_same_sku,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,attribute_order_rate_new_to_brand_ntb_orders_clicks,"numeric(38,9)",,,No,Yes
+i2oretail_dp,ad_campaign_report_filtered,,_airbyte_raw_id,varchar(36),,,Yes,No
+i2oretail_dp,ad_campaign_report_filtered,,_airbyte_extracted_at,timestamptz,,,Yes,No
+i2oretail_dp,ad_campaign_report_filtered,,_airbyte_meta,jsonb,,,No,No
+i2oretail_dp,ad_sp_api_config_backup,,sub_process_id,int4(32),,,No,Yes
+i2oretail_dp,ad_sp_api_config_backup,,request_body,json,,,No,Yes
+i2oretail_dp,ad_sp_api_config_backup,,column_mapping,json,,,No,Yes
+i2oretail_dp,ad_sp_api_config_backup,,source_file_type,varchar(40),,,No,Yes
+i2oretail_dp,ad_sp_api_config_backup,,api_type,varchar(128),,,No,Yes
+i2oretail_dp,ad_sp_api_config_backup,,data_load_check,json,,,No,Yes
+i2oretail_dp,agency,,agency_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.agency_agency_id_seq'::regclass),Yes,No
+i2oretail_dp,agency,,agency_name,varchar(250),,,No,Yes
+i2oretail_dp,agency,,agency_alias,varchar(100),,,No,Yes
+i2oretail_dp,agency,,agency_banner_logo_name,varchar(200),,,No,Yes
+i2oretail_dp,api_claims,,api_type,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,api_claims,,org_id,int4(32),"FOREIGN KEY, PRIMARY KEY",,Yes,No
+i2oretail_dp,api_claims,,marketplace_id,int4(32),"FOREIGN KEY, PRIMARY KEY",,Yes,No
+i2oretail_dp,api_claims,,thread_id,uuid,,,No,No
+i2oretail_dp,api_claims,,expires_at,timestamp,,,No,Yes
+i2oretail_dp,api_claims,,source,varchar(256),PRIMARY KEY,,Yes,No
+i2oretail_dp,application_properties,,id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,application_properties,,module,varchar(100),,,No,Yes
+i2oretail_dp,application_properties,,property,varchar(100),,,No,No
+i2oretail_dp,application_properties,,value,json,,,No,Yes
+i2oretail_dp,application_properties,,description,varchar(500),,,No,Yes
+i2oretail_dp,asin_map_master,,row_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.asin_map_master_row_id_seq'::regclass),Yes,No
+i2oretail_dp,asin_map_master,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,asin_map_master,,asin,varchar(100),,,No,Yes
+i2oretail_dp,asin_map_master,,map,varchar(100),,,No,Yes
+i2oretail_dp,asin_map_master,,lpl,varchar(100),,,No,Yes
+i2oretail_dp,asin_map_master,,region,varchar(100),,,No,Yes
+i2oretail_dp,asin_map_master,,marketplace,varchar(100),,,No,Yes
+i2oretail_dp,asin_map_master,,status,varchar(20),,NULL::character varying,No,Yes
+i2oretail_dp,asin_map_master,,created_at,timestamptz,,now(),No,No
+i2oretail_dp,asin_map_master,,updated_at,timestamptz,,now(),No,No
+i2oretail_dp,auth_resellers_list,,row_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.auth_resellers_list_row_id_seq'::regclass),Yes,No
+i2oretail_dp,auth_resellers_list,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,auth_resellers_list,,authorized_resellers,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,brand,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,product_code,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,self,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,reseller_start_date,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,reseller_end_date,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,org_type,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,region,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,marketplace,varchar(100),,,No,Yes
+i2oretail_dp,auth_resellers_list,,status,varchar(20),,NULL::character varying,No,Yes
+i2oretail_dp,auth_resellers_list,,created_at,timestamptz,,now(),No,No
+i2oretail_dp,auth_resellers_list,,updated_at,timestamptz,,now(),No,No
+i2oretail_dp,brand_violation_plugin_capture_,Primary key (auto-increment),id,int8(64),,nextval('i2oretail_dp.brand_violation_plugin_capture_log_id_seq'::regclass),Yes,No
+i2oretail_dp,brand_violation_plugin_capture_,Product code captured via plugin from the PDP page,suspect_product_code,text,,,Yes,No
+i2oretail_dp,brand_violation_plugin_capture_,Product URL captured via plugin from the PDP page,suspect_product_url,text,,,No,No
+i2oretail_dp,brand_violation_plugin_capture_,Suspect brand captured via plugin from the PDP page,suspect_brand,text,,,Yes,No
+i2oretail_dp,brand_violation_plugin_capture_,Master product code entered by end user/AM,master_product_code,text,,,Yes,Yes
+i2oretail_dp,brand_violation_plugin_capture_,"Type of violation (Duplication, Bundle, Trademark, etc.)",violation_type,text,,,Yes,No
+i2oretail_dp,brand_violation_plugin_capture_,"Tags, if any",tags,text,,,No,Yes
+i2oretail_dp,brand_violation_plugin_capture_,"Keywords, if any",keywords,text,,,No,Yes
+i2oretail_dp,brand_violation_plugin_capture_,Previous violation type captured for suspect,prev_violation_type,text,,,No,Yes
+i2oretail_dp,brand_violation_plugin_capture_,GCS URL of the captured screenshot,screenshot_gcs_url,text,,,No,No
+i2oretail_dp,brand_violation_plugin_capture_,Timestamp of capture,captured_at,timestamptz,,now(),Yes,No
+i2oretail_dp,client_onboarding_status,,client_onboard_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.client_onboarding_status_client_onboard_id_seq'::regclass),Yes,No
+i2oretail_dp,client_onboarding_status,,org_id,int4(32),,,No,No
+i2oretail_dp,client_onboarding_status,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,client_onboarding_status,,source,varchar(100),,,No,No
+i2oretail_dp,client_onboarding_status,,operation,varchar(100),,,No,No
+i2oretail_dp,client_onboarding_status,,onboarding_stage_id,int4(32),,,No,No
+i2oretail_dp,client_onboarding_status,,onboarding_substage_id,int4(32),,,No,No
+i2oretail_dp,client_onboarding_status,,status,varchar(100),,,No,Yes
+i2oretail_dp,client_onboarding_status,,created_by,varchar(100),,,No,Yes
+i2oretail_dp,client_onboarding_status,,created_on,timestamptz,,now(),No,Yes
+i2oretail_dp,client_onboarding_status,,last_modified_on,timestamptz,,now(),No,Yes
+i2oretail_dp,client_onboarding_status,,last_modified_by,varchar(100),,,No,Yes
+i2oretail_dp,client_onboarding_status,,start_datetime,timestamp,,,No,Yes
+i2oretail_dp,client_onboarding_status,,end_datetime,timestamp,,,No,Yes
+i2oretail_dp,client_onboarding_status,,retry_attempts,int4(32),,,No,Yes
+i2oretail_dp,client_onboarding_status,,error_msg,varchar,,,No,Yes
+i2oretail_dp,dag,,dag_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,dag,,dag_env,text,,,No,No
+i2oretail_dp,dag,,description,text,,,No,No
+i2oretail_dp,data_last_publish,,publish_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.data_last_publish_publish_id_seq'::regclass),Yes,No
+i2oretail_dp,data_last_publish,,org_id,int4(32),FOREIGN KEY,,No,Yes
+i2oretail_dp,data_last_publish,,publish_table_name,varchar(100),,,No,Yes
+i2oretail_dp,data_last_publish,,last_publish_time,timestamptz,,'1990-01-01 00:00:00+00'::timestamp with time zone,No,No
+i2oretail_dp,data_last_publish,,publish_target_name,varchar(100),,,No,Yes
+i2oretail_dp,data_last_publish,,publisher,varchar(100),,,No,Yes
+i2oretail_dp,data_loads_record_count,,account_id,int4(32),,,No,Yes
+i2oretail_dp,data_loads_record_count,,org_id,int4(32),,,No,Yes
+i2oretail_dp,data_loads_record_count,,org_name,varchar,,,No,Yes
+i2oretail_dp,data_loads_record_count,,account_name,varchar,,,No,Yes
+i2oretail_dp,data_loads_record_count,,report_name,varchar,,,No,Yes
+i2oretail_dp,data_loads_record_count,,period,date,,,No,Yes
+i2oretail_dp,data_loads_record_count,,job_id,int4(32),,,No,Yes
+i2oretail_dp,data_loads_record_count,,load_id,timestamp,,,No,Yes
+i2oretail_dp,data_loads_record_count,,status,varchar,,,No,Yes
+i2oretail_dp,data_loads_record_count,,week_repo_date,date,,,No,Yes
+i2oretail_dp,data_loads_record_count,,source,varchar,,,No,Yes
+i2oretail_dp,data_loads_record_count,,current_record_count,int4(32),,,No,Yes
+i2oretail_dp,data_loads_record_count,,previous_record_count,int4(32),,,No,Yes
+i2oretail_dp,data_loads_record_count,,previous_period,date,,,No,Yes
+i2oretail_dp,data_loads_record_count,,portal_record_count,int4(32),,,No,Yes
+i2oretail_dp,dq_query,,query_id,int4(32),,,No,No
+i2oretail_dp,dq_query,,query_string,varchar,,,No,No
+i2oretail_dp,dq_query,,query_description,varchar,,,No,Yes
+i2oretail_dp,dq_query,,additional_info,varchar,,,No,Yes
+i2oretail_dp,dq_query,,target,varchar,,'bq'::character varying,No,No
+i2oretail_dp,dq_query_backup,,query_id,int4(32),,,No,Yes
+i2oretail_dp,dq_query_backup,,query_string,varchar,,,No,Yes
+i2oretail_dp,dq_query_backup,,query_description,varchar,,,No,Yes
+i2oretail_dp,dq_query_backup,,additional_info,varchar,,,No,Yes
+i2oretail_dp,dq_results,,id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,dq_results,,process_instance_id,int4(32),,,No,No
+i2oretail_dp,dq_results,,sub_process_id,int4(32),,,No,No
+i2oretail_dp,dq_results,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,dq_results,,frequency,varchar,,,No,Yes
+i2oretail_dp,dq_results,,run_id,int4(32),,,No,Yes
+i2oretail_dp,dq_results,,created_at,timestamp,,,No,Yes
+i2oretail_dp,dq_results,,status,varchar,,,No,Yes
+i2oretail_dp,dq_results,,sub_process_dq_query_id,varchar,,,No,Yes
+i2oretail_dp,dq_results,,error_msg,varchar,,,No,Yes
+i2oretail_dp,email_messages_graph_api,,id,varchar(255),,,Yes,No
+i2oretail_dp,email_messages_graph_api,,subject,varchar(500),,,No,Yes
+i2oretail_dp,email_messages_graph_api,,sender_email,varchar(255),,,No,Yes
+i2oretail_dp,email_messages_graph_api,,sender_name,varchar(255),,,No,Yes
+i2oretail_dp,email_messages_graph_api,,received_datetime,timestamp,,,No,Yes
+i2oretail_dp,email_messages_graph_api,,body_preview,text,,,No,Yes
+i2oretail_dp,email_messages_graph_api,,body_content,text,,,No,Yes
+i2oretail_dp,email_messages_graph_api,,to_recipients,text,,,No,Yes
+i2oretail_dp,email_messages_graph_api,,created_at,timestamp,,now(),No,Yes
+i2oretail_dp,email_receipients,,email_receipient_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,email_receipients,,email_tmpl_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,email_receipients,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,email_receipients,,email_id,varchar(200),,,No,Yes
+i2oretail_dp,email_receipients,,to_emails,varchar(300),,,No,Yes
+i2oretail_dp,email_receipients,,username,varchar(50),,,No,Yes
+i2oretail_dp,email_receipients,,cc_emails,varchar(500),,,No,Yes
+i2oretail_dp,email_receipients,,bcc_emails,varchar(500),,,No,Yes
+i2oretail_dp,email_templates,,email_tmpl_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,email_templates,,tmpl_name,varchar(100),,,No,Yes
+i2oretail_dp,email_templates,,sendgrid_secret_id,varchar(200),,,No,Yes
+i2oretail_dp,email_templates,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,email_templates,,sendgrid_tmpl_id,varchar(50),,,No,Yes
+i2oretail_dp,image_comparison_job_status,,job_id,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_job_status,,product_code,varchar(20),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_job_status,,org_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_job_status,,marketplace,varchar,,,No,Yes
+i2oretail_dp,image_comparison_job_status,,region,varchar,,,No,Yes
+i2oretail_dp,image_comparison_job_status,,status,varchar,,,No,Yes
+i2oretail_dp,image_comparison_job_status,,number_of_comparisons,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_job_status,,time_elapsed_in_ms,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_job_status,,created_at,timestamp,,,No,Yes
+i2oretail_dp,image_comparison_job_status,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,image_comparison_job_status,,total_records,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,product_code,varchar(100),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata,,image_url_1,varchar(500),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata,,image_url_2,varchar(500),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata,,image_file_checksum_1,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,image_file_checksum_2,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,image_size_1,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,image_size_2,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,image_dimensions_1,varchar(20),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,image_dimensions_2,varchar(20),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,score,float8(53),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,score_label,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata,,created_at,timestamp,,,No,Yes
+i2oretail_dp,image_comparison_metadata,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,image_comparison_metadata,,compare_algorithm,varchar,,'deep_feature'::character varying,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,product_code,varchar(100),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata_local,,image_url_1,varchar(500),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata_local,,image_url_2,varchar(500),PRIMARY KEY,,Yes,No
+i2oretail_dp,image_comparison_metadata_local,,image_file_checksum_1,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,image_file_checksum_2,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,image_size_1,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,image_size_2,int4(32),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,image_dimensions_1,varchar(20),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,image_dimensions_2,varchar(20),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,score,float8(53),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,score_label,varchar(100),,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,created_at,timestamp,,,No,Yes
+i2oretail_dp,image_comparison_metadata_local,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison,,product_code,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,period,date,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,time_of_day,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,marketplace,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,region,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,content_change_type,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison,,actual,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,alert,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,asin,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,change_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,compare_result_metadata,jsonb,,,No,No
+i2oretail_dp,image_content_comparison,,expected,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,org_id,int4(32),,,No,Yes
+i2oretail_dp,image_content_comparison,,product_lock_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,project_id,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,source,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,scrape_timestamp,timestamptz,,,No,Yes
+i2oretail_dp,image_content_comparison,,created_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison,,updated_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison,,reporting_range,varchar,,'daily'::character varying,No,Yes
+i2oretail_dp,image_content_comparison,,locked_timestamp,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison,,previous_period,date,,,No,Yes
+i2oretail_dp,image_content_comparison,,previous_time_of_day,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison,,alert_tags,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,product_code,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,period,date,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,time_of_day,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,marketplace,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,region,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,content_change_type,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_backlo,,actual,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,alert,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,asin,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,change_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,compare_result_metadata,jsonb,,,No,No
+i2oretail_dp,image_content_comparison_backlo,,expected,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,org_id,int4(32),,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,product_lock_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,project_id,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,source,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,scrape_timestamp,timestamptz,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,created_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison_backlo,,updated_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison_backlo,,reporting_range,varchar,,'daily'::character varying,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,locked_timestamp,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,previous_period,date,,,No,Yes
+i2oretail_dp,image_content_comparison_backlo,,previous_time_of_day,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,actual,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,alert,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,asin,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,change_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,compare_result_metadata,jsonb,,,No,No
+i2oretail_dp,image_content_comparison_local_,,content_change_type,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,expected,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,marketplace,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,org_id,int4(32),,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,period,date,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,product_code,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,product_lock_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,project_id,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,region,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,source,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,time_of_day,varchar,PRIMARY KEY,,Yes,No
+i2oretail_dp,image_content_comparison_local_,,scrape_timestamp,timestamptz,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,created_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison_local_,,updated_at,timestamp,,now(),No,No
+i2oretail_dp,image_content_comparison_local_,,reporting_range,varchar,,'daily'::character varying,No,Yes
+i2oretail_dp,image_content_comparison_local_,,locked_timestamp,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,previous_period,date,,,No,Yes
+i2oretail_dp,image_content_comparison_local_,,previous_time_of_day,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,id,int4(32),,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,actual,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,alert,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,asin,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,change_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,compare_result_metadata,jsonb,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,content_change_type,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,expected,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,marketplace,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,org_id,int4(32),,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,period,date,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,product_code,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,product_lock_status,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,project_id,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,region,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,source,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,time_of_day,varchar,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,scrape_timestamp,timestamptz,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,created_at,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,image_content_comparison_temp,,reporting_range,varchar,,,No,Yes
+i2oretail_dp,marketplace,,marketplace_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,marketplace,,platform,varchar(50),,,No,No
+i2oretail_dp,marketplace,,region,varchar(50),,,No,No
+i2oretail_dp,marketplace,,metadata,json,,,No,Yes
+i2oretail_dp,marketplace_scraper_mapper,,id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.marketplace_scraper_mapper_id_seq'::regclass),Yes,No
+i2oretail_dp,marketplace_scraper_mapper,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,marketplace_scraper_mapper,,scraper_type,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_queries,,id,int4(32),,nextval('i2oretail_dp.onboarding_query_id_seq'::regclass),Yes,No
+i2oretail_dp,onboarding_queries,,source,varchar(50),,,No,No
+i2oretail_dp,onboarding_queries,,query,text,,,No,No
+i2oretail_dp,onboarding_queries,,priority,int4(32),,,No,No
+i2oretail_dp,onboarding_queries,,operation,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_queries,,validation_query,text,,,No,Yes
+i2oretail_dp,onboarding_queries,,stage_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_queries,,substage_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_queries_test,,id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.onboarding_queries_id_seq'::regclass),Yes,No
+i2oretail_dp,onboarding_queries_test,,source,varchar,,,No,No
+i2oretail_dp,onboarding_queries_test,,query,text,,,No,No
+i2oretail_dp,onboarding_queries_test,,priority,int4(32),,,No,No
+i2oretail_dp,onboarding_queries_test,,operation,varchar,,,No,Yes
+i2oretail_dp,onboarding_queries_test,,validation_query,text,,,No,Yes
+i2oretail_dp,onboarding_queries_test,,stage_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_queries_test,,substage_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_stage,,onboarding_stage_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,onboarding_stage,,source,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_stage,,operation_type,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_stage,,stage,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_stage,,priority,int4(32),,,No,Yes
+i2oretail_dp,onboarding_stage,,retry_threshold,int4(32),,,No,Yes
+i2oretail_dp,onboarding_stage,,metadata,varchar,,,No,Yes
+i2oretail_dp,onboarding_stage,,max_retry_attempts,int4(32),,3,No,No
+i2oretail_dp,onboarding_substage,,onboarding_substage_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,onboarding_substage,,marketplace_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_substage,,onboarding_stage_id,int4(32),,,No,Yes
+i2oretail_dp,onboarding_substage,,sub_stage,varchar(100),,,No,Yes
+i2oretail_dp,onboarding_substage,,description,text,,,No,Yes
+i2oretail_dp,onboarding_substage,,priority,int4(32),,,No,Yes
+i2oretail_dp,onboarding_substage,,operation,varchar(50),,,No,Yes
+i2oretail_dp,onboarding_substage,,team,varchar(50),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,data_load_allocation_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.ops_data_load_allocation_data_load_allocation_id_seq'::regclass),Yes,No
+i2oretail_dp,ops_data_load_allocation,,org_name,varchar(150),,,No,No
+i2oretail_dp,ops_data_load_allocation,,client_login_id,varchar(150),,,No,No
+i2oretail_dp,ops_data_load_allocation,,rdp_ip,varchar(150),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,team,varchar(150),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,target_day,varchar(150),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,download_allocation_user_name,varchar(150),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,sanity_allocation_user_name,varchar(150),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,reporting_range,varchar(100),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,period,timestamp,,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,reports,varchar(250),,,No,Yes
+i2oretail_dp,ops_data_load_allocation,,comments,varchar(500),,,No,Yes
+i2oretail_dp,ops_user_data,,user_data_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.ops_user_data_user_data_id_seq'::regclass),Yes,No
+i2oretail_dp,ops_user_data,,team,varchar(150),,,No,No
+i2oretail_dp,ops_user_data,,user_name,varchar(150),,,No,No
+i2oretail_dp,ops_user_data,,active,bool,,,No,No
+i2oretail_dp,ops_user_data,,created_at,timestamp,,,No,Yes
+i2oretail_dp,ops_user_data,,updated_at,timestamp,,,No,Yes
+i2oretail_dp,ops_user_data,,user_id,varchar(150),,,No,Yes
+i2oretail_dp,org_accounts,,account_id,int4(32),"PRIMARY KEY, UNIQUE",nextval('i2oretail_dp.org_accounts_account_id_seq'::regclass),Yes,No
+i2oretail_dp,org_accounts,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,org_accounts,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,org_accounts,,source_type,varchar(50),,,No,No
+i2oretail_dp,org_accounts,,account_name,varchar(100),,,No,No
+i2oretail_dp,org_accounts,,account_vgid,int4(32),UNIQUE,,Yes,Yes
+i2oretail_dp,org_accounts,,account_type_cd,varchar(50),,,No,No
+i2oretail_dp,org_accounts,,is_active,varchar(50),,,No,Yes
+i2oretail_dp,org_accounts,,account_value,varchar(200),,,No,Yes
+i2oretail_dp,org_accounts,,account_metadata,json,,,No,Yes
+i2oretail_dp,org_dag_map,,org_id,int4(32),,,No,No
+i2oretail_dp,org_dag_map,,dag_id,int4(32),,,No,Yes
+i2oretail_dp,org_dag_map,,is_active,bool,,,No,Yes
+i2oretail_dp,org_data_metadata,,org_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,org_data_metadata,,marketplace_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,org_data_metadata,,data_type,varchar(50),PRIMARY KEY,,Yes,No
+i2oretail_dp,org_data_metadata,,data_set_location,varchar(200),,,No,No
+i2oretail_dp,org_report,,report_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.org_report_report_id_seq'::regclass),Yes,No
+i2oretail_dp,org_report,,org_id,int4(32),,,No,No
+i2oretail_dp,org_report,,report_name,varchar(200),,,No,Yes
+i2oretail_dp,org_report,,ecom_pltfm,varchar(200),,,No,Yes
+i2oretail_dp,org_report,,org_type,varchar(50),,,No,Yes
+i2oretail_dp,org_report,,supports_history,varchar(100),,,No,Yes
+i2oretail_dp,org_sources,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,org_sources,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,org_sources,,source,varchar(50),,,No,Yes
+i2oretail_dp,org_sources,,multiple_accounts,bool,,,No,Yes
+i2oretail_dp,org_sources,,login_page,varchar(100),,,No,Yes
+i2oretail_dp,org_sources,,login_secret_id,varchar(100),,,No,Yes
+i2oretail_dp,org_sources,,is_active,bool,,,No,Yes
+i2oretail_dp,org_sources,,scraper_login_failure,bool,,false,No,Yes
+i2oretail_dp,org_sources,,dataload_type,varchar(10),,'p1'::character varying,No,Yes
+i2oretail_dp,organization,,org_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.organization_org_id_seq'::regclass),Yes,No
+i2oretail_dp,organization,,org_name,varchar(500),,,No,No
+i2oretail_dp,organization,,org_type_cd,varchar(100),,,No,No
+i2oretail_dp,organization,,version,float8(53),,,No,Yes
+i2oretail_dp,organization,,url,varchar(200),,,No,Yes
+i2oretail_dp,organization,,org_alias_name,varchar(50),,,No,Yes
+i2oretail_dp,organization,,org_banner_logo_name,varchar(255),,,No,Yes
+i2oretail_dp,organization,,is_active,varchar(10),,,No,Yes
+i2oretail_dp,organization,,org_priority_weight,int4(32),,0,No,Yes
+i2oretail_dp,organization,,dag_active,varchar(10),,,No,Yes
+i2oretail_dp,organization,,pipeline_batch_id,int4(32),,1,No,Yes
+i2oretail_dp,organization,,scraping_ip_addr,varchar(15),,NULL::character varying,No,Yes
+i2oretail_dp,organization,,agency_id,int4(32),FOREIGN KEY,,No,Yes
+i2oretail_dp,organization,,created_on,timestamp,,now(),No,Yes
+i2oretail_dp,organization,,last_modified_on,timestamp,,now(),No,Yes
+i2oretail_dp,organization,,created_by,varchar(255),,,No,Yes
+i2oretail_dp,organization,,last_modified_by,varchar(255),,,No,Yes
+i2oretail_dp,process_audit,,process_instance_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.process_audit_process_instance_id_seq'::regclass),Yes,No
+i2oretail_dp,process_audit,,org_id,int4(32),,,Yes,No
+i2oretail_dp,process_audit,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,process_audit,,process_id,int4(32),,,Yes,No
+i2oretail_dp,process_audit,,request_run_date,varchar(40),,,No,Yes
+i2oretail_dp,process_audit,,start_datetime,timestamp,,,No,Yes
+i2oretail_dp,process_audit,,end_datetime,timestamp,,,No,Yes
+i2oretail_dp,process_audit,,status,varchar(80),,,Yes,Yes
+i2oretail_dp,process_audit,,error_msg,text,,,No,Yes
+i2oretail_dp,process_audit,,stage,varchar(50),,,Yes,Yes
+i2oretail_dp,process_audit,,period,date,,,No,Yes
+i2oretail_dp,process_audit,,created_at,timestamptz,,now(),No,No
+i2oretail_dp,process_audit,,updated_at,timestamptz,,now(),No,No
+i2oretail_dp,process_audit,,job_run_timestamp,timestamp,,'1900-01-01 00:00:00'::timestamp without time zone,No,Yes
+i2oretail_dp,process_audit,,time_of_day,int4(32),,,No,Yes
+i2oretail_dp,process_org_market_place_param,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,process_org_market_place_param,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,process_org_market_place_param,,process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,process_org_market_place_param,,input_directory,varchar(500),,,No,Yes
+i2oretail_dp,process_org_market_place_param,,processed_directory,varchar(500),,,No,Yes
+i2oretail_dp,process_org_market_place_param,,bq_directory,varchar(500),,,No,Yes
+i2oretail_dp,process_org_market_place_param,,archive_directory,varchar(500),,,No,Yes
+i2oretail_dp,process_org_market_place_param,,active,varchar(50),,,No,Yes
+i2oretail_dp,processes,,process_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,processes,,process_name,varchar(200),,,No,Yes
+i2oretail_dp,processes,,source_type,varchar(50),,,No,Yes
+i2oretail_dp,processes,,trigger_json,json,,,No,Yes
+i2oretail_dp,processes,,is_active,bool,,true,No,Yes
+i2oretail_dp,processes,,display_name,varchar(150),,,No,Yes
+i2oretail_dp,product_matching_output,,Department,text,,,No,Yes
+i2oretail_dp,product_matching_output,,Search_Term,text,,,No,Yes
+i2oretail_dp,product_matching_output,,Search_Frequency_Rank,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_1_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_1_Product_Title,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_1_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_1_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_2_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_2_Product_Title,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_2_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_2_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_3_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_3_Product_Title,text,,,No,Yes
+i2oretail_dp,product_matching_output,,_3_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,_3_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,Enter_ASINs_or_Products,float8(53),,,No,Yes
+i2oretail_dp,product_matching_output,,Reporting_Range,text,,,No,Yes
+i2oretail_dp,product_matching_output,,Viewing,text,,,No,Yes
+i2oretail_dp,product_matching_output,,start_date,text,,,No,Yes
+i2oretail_dp,product_matching_output,,end_date,text,,,No,Yes
+i2oretail_dp,product_matching_output,,org_type,text,,,No,Yes
+i2oretail_dp,product_matching_output,,marketplace,text,,,No,Yes
+i2oretail_dp,product_matching_output,,region,text,,,No,Yes
+i2oretail_dp,product_matching_output,,product_code_type,text,,,No,Yes
+i2oretail_dp,product_matching_output,,source_system_id,text,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,upc,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,month,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,a_plus,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,author,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,period,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,region,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,ISBN_10,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,ISBN_13,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,Publisher,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,images_url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,list_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,seller_url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,marketplace,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,offer_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,parent_asin,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,scrape_date,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,time_of_day,int8(64),,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,manufacturer,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,model_number,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,photos_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_code,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,sub_category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,videos_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,A_plus_source,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,buy_box_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,html_location,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_title,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,total_reviews,int8(64),,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,average_rating,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,bsr_cat_change,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,prime_eligible,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,bsr_in_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,platform_source,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,pp_bsr_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,reporting_range,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,shipping_charge,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,shipping_weight,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,full_description,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,pp_buy_box_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,scrape_timestamp,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,bullet_point_text,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,date_first_listed,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,domestic_shipping,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,item_model_number,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_condition,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,bsr_sub_cat_change,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,per_change_bsr_ctg,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_dimensions,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,product_variations,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,availability_status,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,bsr_in_sub_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,one_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,pp_bsr_sub_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,two_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,amazons_choice_badge,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,five_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,four_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,price_exception_flag,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,valid_buy_box_seller,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,availability_quantity,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,three_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,Buy_box_winning_seller,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,available_book_formats,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,international_shipping,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,per_change_bsr_sub_ctg,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,amazon_best_seller_rank,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,answered_questions_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,buybox_price_availability,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,frequently_bought_together,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered,,_airbyte_raw_id,varchar(36),,,Yes,No
+i2oretail_dp,product_pricing_range_filtered,,_airbyte_extracted_at,timestamptz,,,Yes,No
+i2oretail_dp,product_pricing_range_filtered,,_airbyte_meta,jsonb,,,No,No
+i2oretail_dp,product_pricing_range_filtered_,,upc,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,month,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,a_plus,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,author,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,period,varchar,,,Yes,Yes
+i2oretail_dp,product_pricing_range_filtered_,,region,varchar,,,Yes,Yes
+i2oretail_dp,product_pricing_range_filtered_,,ISBN_10,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,ISBN_13,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,Publisher,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,images_url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,input_asin,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,list_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,seller_url,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,marketplace,varchar,,,Yes,Yes
+i2oretail_dp,product_pricing_range_filtered_,,offer_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,parent_asin,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,scrape_date,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,time_of_day,int8(64),,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,manufacturer,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,model_number,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,photos_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_code,varchar,,,Yes,Yes
+i2oretail_dp,product_pricing_range_filtered_,,sub_category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,videos_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,A_plus_source,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,buy_box_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,html_location,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_title,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,total_reviews,int8(64),,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,average_rating,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,bsr_cat_change,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,prime_eligible,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,bsr_in_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,platform_source,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,pp_bsr_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,reporting_range,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,shipping_charge,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,shipping_weight,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,full_description,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,pp_buy_box_price,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_category,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,scrape_timestamp,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,bullet_point_text,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,date_first_listed,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,domestic_shipping,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,item_model_number,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_condition,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,bsr_sub_cat_change,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,per_change_bsr_ctg,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_dimensions,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,product_variations,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,availability_status,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,bsr_in_sub_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,one_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,pp_bsr_sub_category,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,two_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,amazons_choice_badge,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,five_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,four_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,price_exception_flag,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,valid_buy_box_seller,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,availability_quantity,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,three_star_percentage,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,Buy_box_winning_seller,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,available_book_formats,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,international_shipping,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,per_change_bsr_sub_ctg,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,amazon_best_seller_rank,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,answered_questions_count,"numeric(38,9)",,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,buybox_price_availability,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,frequently_bought_together,varchar,,,No,Yes
+i2oretail_dp,product_pricing_range_filtered_,,_airbyte_raw_id,varchar(36),,,Yes,No
+i2oretail_dp,product_pricing_range_filtered_,,_airbyte_extracted_at,timestamptz,,,Yes,No
+i2oretail_dp,product_pricing_range_filtered_,,_airbyte_meta,jsonb,,,No,No
+i2oretail_dp,scheduler_config,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,scheduler_config,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,scheduler_config,,dag_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,scheduler_config,,dag_name,varchar(200),,,No,Yes
+i2oretail_dp,scheduler_config,,dag_file,varchar(200),,,No,Yes
+i2oretail_dp,scheduler_config,,schedule,varchar(200),,,No,Yes
+i2oretail_dp,scraper_subprocess_id_mapper,,id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.scraper_subprocess_id_seq'::regclass),Yes,No
+i2oretail_dp,scraper_subprocess_id_mapper,,sub_process_id,int4(32),,,No,No
+i2oretail_dp,scraper_subprocess_id_mapper,,scraper_type,varchar(50),,,No,Yes
+i2oretail_dp,search_terms,,Department,text,,,No,Yes
+i2oretail_dp,search_terms,,Search_Term,text,,,No,Yes
+i2oretail_dp,search_terms,,Search_Frequency_Rank,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_1_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,search_terms,,_1_Product_Title,text,,,No,Yes
+i2oretail_dp,search_terms,,_1_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_1_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_2_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,search_terms,,_2_Product_Title,text,,,No,Yes
+i2oretail_dp,search_terms,,_2_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_2_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_3_Clicked_ASIN,text,,,No,Yes
+i2oretail_dp,search_terms,,_3_Product_Title,text,,,No,Yes
+i2oretail_dp,search_terms,,_3_Click_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,_3_Conversion_Share,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,Enter_ASINs_or_Products,float8(53),,,No,Yes
+i2oretail_dp,search_terms,,Reporting_Range,text,,,No,Yes
+i2oretail_dp,search_terms,,Viewing,text,,,No,Yes
+i2oretail_dp,search_terms,,start_date,text,,,No,Yes
+i2oretail_dp,search_terms,,end_date,text,,,No,Yes
+i2oretail_dp,search_terms,,org_type,text,,,No,Yes
+i2oretail_dp,search_terms,,marketplace,text,,,No,Yes
+i2oretail_dp,search_terms,,region,text,,,No,Yes
+i2oretail_dp,search_terms,,product_code_type,text,,,No,Yes
+i2oretail_dp,search_terms,,source_system_id,text,,,No,Yes
+i2oretail_dp,search_terms_copy,,id,int4(32),,,No,Yes
+i2oretail_dp,search_terms_copy,,name,varchar(50),,,No,Yes
+i2oretail_dp,search_terms_copy,,salary,int4(32),,,No,Yes
+i2oretail_dp,sh_validations,,rule_index,varchar(5),PRIMARY KEY,,Yes,No
+i2oretail_dp,sh_validations,,rule_name,varchar(600),,,No,Yes
+i2oretail_dp,sh_validations,,threshold_limit,int4(32),,,No,No
+i2oretail_dp,sh_validations,,is_active,bool,,,No,Yes
+i2oretail_dp,sp_api_config,,sub_process_id,int4(32),"FOREIGN KEY, PRIMARY KEY",,Yes,No
+i2oretail_dp,sp_api_config,,request_body,json,,,No,No
+i2oretail_dp,sp_api_config,,column_mapping,json,,,No,No
+i2oretail_dp,sp_api_config,,source_file_type,varchar(40),,'json'::character varying,No,No
+i2oretail_dp,sp_api_config,,api_type,varchar(128),,,No,Yes
+i2oretail_dp,sp_api_config,,data_load_check,json,,'{}'::json,No,Yes
+i2oretail_dp,sp_api_config,,filters,json,,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,sub_process_id,int4(32),,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,request_body,json,,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,column_mapping,json,,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,source_file_type,varchar(40),,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,api_type,varchar(128),,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,data_load_check,json,,,No,Yes
+i2oretail_dp,sp_api_config_bck_25_04_2024,,filters,json,,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,sub_process_id,int4(32),,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,request_body,json,,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,column_mapping,json,,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,source_file_type,varchar(40),,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,api_type,varchar(128),,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,data_load_check,json,,,No,Yes
+i2oretail_dp,sp_api_config_havingdatalevel,,filters,json,,,No,Yes
+i2oretail_dp,sp_api_properties,,api_type,varchar(256),,,No,No
+i2oretail_dp,sp_api_properties,,api_group,varchar(256),,,No,No
+i2oretail_dp,sp_api_properties,,process_ids,json,,'[]'::json,No,No
+i2oretail_dp,sp_api_properties,,sub_process_ids,json,,'[]'::json,No,No
+i2oretail_dp,sp_api_properties,,retry_config,json,,'{}'::json,No,No
+i2oretail_dp,sp_api_properties,,audit_stage,varchar(256),,,No,Yes
+i2oretail_dp,sp_api_properties,,audit_status,varchar(256),,,No,Yes
+i2oretail_dp,sp_api_retry_config,,api_type,varchar(256),PRIMARY KEY,,Yes,No
+i2oretail_dp,sp_api_retry_config,,retry_config,json,,'{}'::json,No,No
+i2oretail_dp,sp_api_schema_change_alerts,,detail_id,int4(32),"FOREIGN KEY, PRIMARY KEY",,Yes,No
+i2oretail_dp,sp_api_schema_change_alerts,,unknown_columns,json,,'[]'::json,No,No
+i2oretail_dp,sp_api_schema_change_alerts,,missing_columns,json,,'[]'::json,No,No
+i2oretail_dp,sp_api_schema_change_alerts,,created_at,timestamptz,,now(),No,No
+i2oretail_dp,sp_api_schema_change_alerts,,email_sent_at,timestamptz,,,No,Yes
+i2oretail_dp,sub_process_account_brand_type_,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_account_brand_type_,,account_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_account_brand_type_,,brand_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_account_brand_type_,,is_active,bool,,,No,Yes
+i2oretail_dp,sub_process_account_type_param,,account_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_account_type_param,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_account_type_param,,account_type_cd,varchar(50),,,No,Yes
+i2oretail_dp,sub_process_account_type_param,,is_active,varchar(20),,,No,Yes
+i2oretail_dp,sub_process_account_type_param,,po_item_lvl_chunk_size,int4(32),,,No,Yes
+i2oretail_dp,sub_process_account_type_param,,supports_history,varchar,,,No,Yes
+i2oretail_dp,sub_process_audit,,detail_id,int4(32),PRIMARY KEY,nextval('i2oretail_dp.sub_process_audit_detail_id_seq'::regclass),Yes,No
+i2oretail_dp,sub_process_audit,,process_instance_id,int8(64),FOREIGN KEY,,Yes,No
+i2oretail_dp,sub_process_audit,,sub_process_id,int4(32),FOREIGN KEY,,Yes,No
+i2oretail_dp,sub_process_audit,,start_date,date,,,No,Yes
+i2oretail_dp,sub_process_audit,,end_date,date,,,No,Yes
+i2oretail_dp,sub_process_audit,,frequency,varchar(20),,,No,Yes
+i2oretail_dp,sub_process_audit,,account_name,varchar(100),,,No,Yes
+i2oretail_dp,sub_process_audit,,account_id,int4(32),,,No,Yes
+i2oretail_dp,sub_process_audit,,brand_name,varchar(50),,,No,Yes
+i2oretail_dp,sub_process_audit,,brand_id,int4(32),,,No,Yes
+i2oretail_dp,sub_process_audit,,start_datetime,timestamp,,,No,Yes
+i2oretail_dp,sub_process_audit,,end_datetime,timestamp,,,No,Yes
+i2oretail_dp,sub_process_audit,,stage,varchar(40),,,Yes,Yes
+i2oretail_dp,sub_process_audit,,status,varchar(40),,,Yes,Yes
+i2oretail_dp,sub_process_audit,,error_msg,text,,,No,Yes
+i2oretail_dp,sub_process_audit,,retry_attempts,int4(32),,,No,Yes
+i2oretail_dp,sub_process_audit,,rows_count,int4(32),,,No,Yes
+i2oretail_dp,sub_process_audit,,run_type,varchar(40),,,No,Yes
+i2oretail_dp,sub_process_audit,,gcs_location,varchar(500),,,No,Yes
+i2oretail_dp,sub_process_audit,,created_at,timestamptz,,now(),No,No
+i2oretail_dp,sub_process_audit,,updated_at,timestamptz,,now(),No,No
+i2oretail_dp,sub_process_audit,,priority_weight,int4(32),,0,No,Yes
+i2oretail_dp,sub_process_audit,,metadata,json,,,No,Yes
+i2oretail_dp,sub_process_audit,,is_automated,bool,,true,No,Yes
+i2oretail_dp,sub_process_audit,,application_load,bool,,true,No,Yes
+i2oretail_dp,sub_process_audit,,report_timestamp,timestamp,,'1900-01-01 00:00:00'::timestamp without time zone,No,Yes
+i2oretail_dp,sub_process_dq_query,,id,int4(32),,,No,No
+i2oretail_dp,sub_process_dq_query,,sub_process_id,int4(32),,,No,No
+i2oretail_dp,sub_process_dq_query,,query_id,int4(32),,,No,No
+i2oretail_dp,sub_process_dq_query,,frequency,varchar,,,No,No
+i2oretail_dp,sub_process_dq_query,,is_active,varchar,,,No,No
+i2oretail_dp,sub_process_dq_query,,error_level,varchar,,,No,Yes
+i2oretail_dp,sub_process_dq_query,,condition_checks,varchar,,,No,Yes
+i2oretail_dp,sub_process_dq_query,,priority,varchar,,'check'::character varying,No,Yes
+i2oretail_dp,sub_process_dq_query,,marketplace_id,_int4,,,No,No
+i2oretail_dp,sub_process_dq_query,,metric_type,varchar,,,No,Yes
+i2oretail_dp,sub_process_org_param,,org_id,int4(32),FOREIGN KEY,'-1'::integer,Yes,No
+i2oretail_dp,sub_process_org_param,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_org_param,,sub_process_name,varchar(300),,,No,No
+i2oretail_dp,sub_process_org_param,,files_config,varchar(1000),,,No,Yes
+i2oretail_dp,sub_process_org_param,,config,json,,,No,Yes
+i2oretail_dp,sub_process_org_type_param,,org_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_org_type_param,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_org_type_param,,is_active,bool,,,No,Yes
+i2oretail_dp,sub_process_org_type_param,,marketplace_id,int4(32),,,No,No
+i2oretail_dp,sub_process_org_type_param,,trigger_json,json,,,No,Yes
+i2oretail_dp,sub_process_org_type_param,,update_check,bool,,,No,Yes
+i2oretail_dp,sub_process_org_type_param,,metadata,json,,,No,Yes
+i2oretail_dp,sub_process_org_type_param,,is_automated,bool,,true,No,Yes
+i2oretail_dp,sub_process_org_type_param,,application_load,bool,,true,No,Yes
+i2oretail_dp,sub_process_org_type_param,,start_date,date,,'1900-01-01'::date,No,Yes
+i2oretail_dp,sub_process_org_type_param,,end_date,date,,'9999-12-31'::date,No,Yes
+i2oretail_dp,sub_process_param,,sub_process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_process_param,,sub_process_name,varchar(300),,,No,No
+i2oretail_dp,sub_process_param,,files_config,varchar(800),,,No,Yes
+i2oretail_dp,sub_process_param,,config,json,,,No,Yes
+i2oretail_dp,sub_processes,,process_id,int4(32),FOREIGN KEY,,No,No
+i2oretail_dp,sub_processes,,sub_process_id,int4(32),PRIMARY KEY,,Yes,No
+i2oretail_dp,sub_processes,,sub_process_name,varchar(300),,,No,Yes
+i2oretail_dp,sub_processes,,frequency,varchar(200),,,No,Yes
+i2oretail_dp,sub_processes,,expected_start_time_utc,time,,,No,Yes
+i2oretail_dp,sub_processes,,expected_end_time_utc,time,,,No,Yes
+i2oretail_dp,sub_processes,,required_process,varchar(50),,,No,Yes
+i2oretail_dp,sub_processes,,retry_config,int4(32),,,No,Yes
+i2oretail_dp,sub_processes,,supports_history,varchar(50),,,No,Yes
+i2oretail_dp,sub_processes,,report_name,varchar(300),,,No,Yes
+i2oretail_dp,sub_processes,,max_timeout,int4(32),,,No,Yes
+i2oretail_dp,sub_processes,,report_count,int4(32),,,No,Yes
+i2oretail_dp,sub_processes,,input_location,varchar(150),,,No,Yes
+i2oretail_dp,translation_table,,region,varchar(50),,,No,Yes
+i2oretail_dp,translation_table,,key,varchar(50),,,No,Yes
+i2oretail_dp,translation_table,,value,varchar(250),,,No,Yes
+i2oretail_dp,vantage_record_count,,account_id,int4(32),,,Yes,No
+i2oretail_dp,vantage_record_count,,org_id,int4(32),,,Yes,No
+i2oretail_dp,vantage_record_count,,org_name,varchar,,,No,Yes
+i2oretail_dp,vantage_record_count,,account_name,varchar,,,No,Yes
+i2oretail_dp,vantage_record_count,,record_count,int4(32),,,No,Yes
+i2oretail_dp,vantage_record_count,,report_name,varchar,,,Yes,No
+i2oretail_dp,vantage_record_count,,period,date,,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Sessions,int8(64),,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Agency_User,varchar,,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Customer_Org,varchar,,,Yes,Yes
+i2oretail_dp,viz_app_usage_metrics,,double_field_8,"numeric(38,9)",,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Week_Start_Date,varchar,,,Yes,Yes
+i2oretail_dp,viz_app_usage_metrics,,Modules_Accessed,varchar,,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Cumstomer_Mail_ID,varchar,,,Yes,Yes
+i2oretail_dp,viz_app_usage_metrics,,Subscription_Type,varchar,,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,Total_Time__Mins_,"numeric(38,9)",,,No,Yes
+i2oretail_dp,viz_app_usage_metrics,,_airbyte_raw_id,varchar(36),,,Yes,No
+i2oretail_dp,viz_app_usage_metrics,,_airbyte_extracted_at,timestamptz,,,Yes,No
+i2oretail_dp,viz_app_usage_metrics,,_airbyte_meta,jsonb,,,No,No
+i2oretail_dp,viz_content_change,,rank,int8(64),,,No,Yes
+i2oretail_dp,viz_content_change,,month,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,latest,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,period,varchar,,,Yes,Yes
+i2oretail_dp,viz_content_change,,region,varchar,,,Yes,Yes
+i2oretail_dp,viz_content_change,,top_50,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,rank_1P,int8(64),,,No,Yes
+i2oretail_dp,viz_content_change,,rank_3P,int8(64),,,No,Yes
+i2oretail_dp,viz_content_change,,previous,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,watchlist,bool,,,No,Yes
+i2oretail_dp,viz_content_change,,marketplace,varchar,,,Yes,Yes
+i2oretail_dp,viz_content_change,,output_asin,varchar,,,Yes,Yes
+i2oretail_dp,viz_content_change,,product_code,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,buybox_winner,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,reporting_range,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,date_first_listed,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,in_product_master,bool,,,No,Yes
+i2oretail_dp,viz_content_change,,product_code_type,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,product_image_urls,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,variation_affected,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,content_change_type,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,amazon_best_seller_rank,varchar,,,No,Yes
+i2oretail_dp,viz_content_change,,_airbyte_raw_id,varchar(36),,,Yes,No
+i2oretail_dp,viz_content_change,,_airbyte_extracted_at,timestamptz,,,Yes,No
+i2oretail_dp,viz_content_change,,_airbyte_meta,jsonb,,,No,No
+i2oretail_dp,viz_latest_product_details_dump,,product_code,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,marketplace,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,region,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,full_description,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,product_category,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,bullet_point_text,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,images_url,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,product_dimensions,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,shipping_weight,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,legal_disclaimer,text,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,safety_information,text,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,ingredients,text,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,product_title,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,video_url,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,video_thumbnail_url,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,period,date,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,time_of_day,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,a_plus,varchar,,,No,Yes
+i2oretail_dp,viz_latest_product_details_dump,,sh_row,int4(32),,,No,Yes
