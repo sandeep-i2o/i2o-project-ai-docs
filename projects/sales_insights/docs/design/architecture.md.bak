@@ -57,10 +57,10 @@ For full functional requirements, refer to the [PRD](../requirements/prd.md).
 | **Existing i2o microservices must be reused** | No new infrastructure; `i2o-admin`, `i2o-scheduler`, `frontendapplication-i2oretail` extended |
 | **Keycloak for authentication** | SSO is mandated; all new endpoints protected via existing Keycloak realm |
 | **PostgreSQL (Cloud SQL)** | Organizational standard for transactional data; TimescaleDB extension for `fx_rates` time-series optimization |
-| **Java 17 / Spring Boot 3.x** | Consistent stack for the newly required `sales-insights-api` decoupled bounded context. |
-| **Angular 15 + TypeScript** | Align with `frontendapplication-i2oretail` stack |
-| **ECB XML feed as FX source** | Require both daily CRON and a 12-month historical bootstrap payload |
-| **Cold-path (batch) data refresh** | Daily cadence; Real-time streaming is out of scope for MVP |
+| **Java 17 / Spring Boot 3.x for new backend modules** | Align with `i2o-scheduler` stack (newest active service) |
+| **Angular 15 + TypeScript for frontend** | Align with `frontendapplication-i2oretail` stack |
+| **ECB XML feed as FX source** | Contractual and business requirement; no custom rates in MVP |
+| **Cold-path (batch) data refresh: daily** | Real-time streaming is out of scope for MVP |
 | **Q2 2026 delivery target** | 8-week timeline — forces scope discipline |
 
 ---
@@ -319,7 +319,7 @@ sequenceDiagram
     end
 ```
 
-### 6.3 Scenario: CSV Sales Data Ingestion & Bootstrap
+### 6.3 Scenario: CSV Sales Data Ingestion
 
 ```mermaid
 sequenceDiagram
@@ -340,16 +340,6 @@ sequenceDiagram
     SCHED->>DB2: REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_aggregates
 ```
 
-**Data Contracts & Constraints:**
-- **Schema:** CSV headers must match the strict `knowledge/bigquery_schemas/sales_data_schema.md` contract.
-- **Ownership:** Extractor pipelines pushing to GCS are owned by the Data Platform team, adhering to daily 01:30 CET SLA.
-- **Failures:** Missing or late CSVs trigger SendGrid alerts to DataOps; system processes available files and flags missing regions as 'stale'. Replaying ingestion for a specific date is idempotent and triggered via `/api/admin/replay-ingestion?date=yyyy-mm-dd`.
-
-### 6.3.1 Scenario: Historical FX & Sales Data Bootstrap
-To satisfy LY comparison requirements at launch, identical ingestors are executed in a localized, controlled boot sequence prior to User go-live:
-1. **Historical FX Bootstrap:** Download the ECB bulk historical XML payload (last 12 months) and execute `EcbHistoricalBootstrapTask`. Validates conversion rates locally.
-2. **Historical Sales Bootstrap:** Process 12-months of daily regional CSV files. Tracked via `migration_audit` tables to verify totals against external ledgers.
-
 ### 6.4 Scenario: CSV Export
 
 ```mermaid
@@ -357,19 +347,13 @@ sequenceDiagram
     actor User as Data Analyst
     participant UI as SalesDataGrid
     participant API as sales-insights-api
-    participant CS as Cloud Storage (Temp)
-    participant SG as SendGrid
 
     User->>UI: Click "Export CSV"
-    UI->>API: POST /api/v1/sales-insights/export {regions,currency,format,filters}
-    API-->>UI: 202 Accepted {job_id: "uuid"}
-    API->>API: Spawn background thread (Spring @Async) for extraction
-    API->>API: Query sales_data + apply FX conversion + chunk writing
-    API->>CS: Stream chunks to GCS signed URL (TTL: 24h)
-    API->>SG: Send email to User with secure download link
-    UI-->>User: Notification: "Export started. You will receive an email shortly."
+    UI->>API: GET /api/v1/sales-insights/export?regions=DE&currency=GBP&format=csv
+    API->>API: Query sales_data + apply FX conversion
+    API-->>UI: Streamed CSV response (Content-Disposition: attachment)
+    UI-->>User: Browser file download triggered
 ```
-> **Note:** The API uses `@Async` combined with Google Cloud Storage temporary signed URLs because filtered dataset queries across 5 regions over multiple years can easily exceed synchronous request timeouts (P1 finding). Notification via email satisfies scalability guarantees.
 
 ---
 
@@ -424,17 +408,9 @@ graph TB
 |------------|---------|-------|
 | `local` | Developer workstation | PostgreSQL in Docker; mock ECB feed |
 | `dev` | CI integration | Cloud SQL dev instance; real ECB feed |
-| `qa` / `uat` | QA + UAT sign-off | Separate Cloud SQL instance; localized 12-month backfill for LY validation |
-| `preprod` | Pre-production validation | Exact copy of prod pipeline |
+| `qa` / `uat` | QA + UAT sign-off | Separate Cloud SQL instance; anonymized data |
+| `preprod` | Pre-production validation | Mirror of prod; real ECB, synthetic sales data |
 | `prod` | Production | Cloud SQL HA; Cloud Armor WAF; min 2 Cloud Run instances |
-
-### 7.3 Data Readiness & Rollout Sequence
-1. **Schema Initialization:** Flyway creates `sales_data`, `fx_rates`, and views.
-2. **Historical FX Ingestion:** `EcbHistoricalBootstrapTask` is executed immediately, filling 13 months of daily rates. Validation queries verify exact day mappings.
-3. **Data Platform Sync:** 13 months of regional marketplace CSVs are loaded into the GCS bucket.
-4. **Sales Backfill Run:** `CsvIngestionTask` runs in bootstrap mode. The `migration_audit` system ensures 100% processing without timeouts.
-5. **View Materialization:** `mv_daily_aggregates` is fully computed.
-6. **Go-Live Gate:** Zero missing days in `fx_rates`, 100% correlation with regional accounting reports for previous 30 days. No user traffic is permitted until gate passes.
 
 ---
 
@@ -459,11 +435,7 @@ graph TB
 ### 8.3 Logging & Observability
 
 - **Structured logging:** All services use GCP Cloud Logging with JSON format (trace IDs via Micrometer Tracing).
-- **Key metrics tracked (Cloud Monitoring):** 
-  - `ecb_ingestion_success_rate`, `api_p95_latency_ms`, `sales_data_freshness_hours`.
-  - **Custom PRD Telemetry:**
-    - `report_generation_duration_ms`: Tracks E2E dashboard render turnarounds to prove <5s goal.
-    - `unique_weekly_users`: Validated against active region manager count to prove 100% adoption.
+- **Key metrics tracked (Cloud Monitoring):** `ecb_ingestion_success_rate`, `api_p95_latency_ms`, `sales_data_freshness_hours`.
 - **Alerting:** P95 latency >500ms triggers alert; ingestion failure triggers SendGrid admin alert.
 - **Audit trail:** All API calls logged with user ID, requested regions, and timestamp.
 
@@ -487,7 +459,7 @@ converted_value = local_value
 ```
 Where `FX(X → EUR) = rate_to_eur` stored in `fx_rates`.  
 If `target_currency == EUR`, conversion is a passthrough.  
-If currency not found in `fx_rates`, API falls back to EUR automatically and returns `{"fallback": true, "fallback_currency": "EUR", "message": "Rates as of [latest_date]"}`. The UI renders this payload inside an explicit notification header to satisfy the PRD rule (`B5`, `AC` corner-case).
+If currency not found in `fx_rates`, API returns HTTP 422 with `"Currency Not Supported"`.
 
 ---
 
@@ -608,7 +580,7 @@ The system must satisfy strict latency targets (<200ms P95 dashboard load), achi
 >    - Build components: `SalesFilterBarComponent` (multi-select dropdowns via PrimeNG), `KpiCardGroupComponent`, `TrendChartComponent` (ECharts `ngx-echarts`), `SalesDataGridComponent` (AG Grid Enterprise).
 >    - Use `SalesInsightsStateService` (RxJS BehaviorSubjects) + `SalesInsightsApiService` (extends `rest-api.service.ts` pattern).
 >    - Add nav link to app sidebar.
-> 8. **Integration testing:** Validate FX conversion accuracy; performance-test aggregation queries; E2E test filter → chart update using **Playwright** (Protractor is deprecated).
+> 8. **Integration testing:** Validate FX conversion accuracy; performance-test aggregation queries; E2E test filter → chart update (Protractor).
 > 9. **UAT + PO sign-off** against acceptance criteria in PRD sections US001–US003.
 >
 > **Key files to create:**
