@@ -74,3 +74,65 @@
 - Rate limiting is in-memory (ConcurrentHashMap) instead of PostgreSQL.
 - HTTP statuses (429, 503, 404, 400) mapped to 500 via generic BaseController.
 
+---
+
+## Checkpoint — 2026-03-04: Architecture Verification & Planning (IAC-117)
+
+### Architecture Files Consulted
+- `docs/design/architecture.md` (Sections 4.1, 8.1, 16)
+- `tickets/stories/STORY-011-config-gate-componentid.md`
+
+### Status Update
+- **Task:** Config Registration & Integration Readiness Gate
+- **Action:** Defined SQL queries for `bp_marketplace_overview_card` and `bp_marketplace_overview_table`.
+- **Query IDs:** Assigned `20001` (Card) and `20002` (Table).
+- **Next:** Create feature branch `feature/issue-IAC-117-config-gate` and apply changes.
+
+---
+
+## Checkpoint — 2026-03-04: Implementation Completion (IAC-117)
+
+### Changes Applied
+- **Branch:** `feature/issue-IAC-117-config-gate` (in `i2o-reseller`)
+- **PostgreSQL:** Created [marketplace-overview-config.sql](file:///Users/sandeepofficial/Documents/workspace/backend/i2o-reseller/src/main/resources/marketplace-overview-config.sql) for component registration.
+- **BigQuery Config:** Appended new query IDs `20001` and `20002` to [query_described.csv](file:///Users/sandeepofficial/Documents/workspace/automation/i2o-project-ai-docs/knowledge/ui_data_queries/query_described.csv).
+
+### Readiness Status
+- Config gate is now OPEN. Frontend integration can proceed with component IDs: `bp_marketplace_overview_card`, `bp_marketplace_overview_table`.
+- **Jira Status:** Transitioned to **IN PROGRESS**.
+
+---
+
+## Checkpoint — 2026-03-05: Frontend Implementation Complete (IAC-114)
+
+### Branch
+`feature/issue-IAC-114-frontend-marketplace-overview` in `frontendapplication-i2oretail`
+Commit: `28a321d9a` — 32 files, 2,623 insertions
+
+### Stories Implemented
+| Story | Title | Status |
+|-------|-------|--------|
+| IAC-118 | Module Scaffold, Models, API & State Service | ✅ Done |
+| IAC-119 | Filter Bar Component | ✅ Done |
+| IAC-120 | Card View (CardList + Card) | ✅ Done |
+| IAC-121 | Table View (AG Grid) | ✅ Done |
+| IAC-122 | Initiate Trial Dialog | ✅ Done |
+
+### Files Created
+- `src/app/modules/marketplace-overview/` — full module tree (32 files)
+  - `models/` — 3 interfaces (kpi, filter, activation)
+  - `services/` — API service (4 methods) + State service (BehaviorSubjects)
+  - `components/` — 6 components (page, filter-bar, card-list, card, table, dialog)
+  - Spec files for API service, State service, FilterBar, Card, TrialDialog
+
+### Routing Wired
+- `app-routing.module.ts`: lazy-loaded route at `brandprotector/resellerbenefits/marketplace-overview`
+- `home.constants.ts`: breadcrumb config entry (F-H-001)
+
+### Verification
+- TypeScript type-check: ✅ 0 errors (`npx tsc --noEmit`)
+- Pre-existing Karma failures in unrelated `summary/` + `user-management/` specs (not caused by this change)
+
+### Jira
+- IAC-114 transitioned to **IN PROGRESS**
+
