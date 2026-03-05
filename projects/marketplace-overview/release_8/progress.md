@@ -136,3 +136,22 @@ Commit: `28a321d9a` — 32 files, 2,623 insertions
 ### Jira
 - IAC-114 transitioned to **IN PROGRESS**
 
+
+---
+
+## Checkpoint — 2026-03-05 12:49: QA Automation (IAC-114)
+
+### Execution Context
+- **Project:** marketplace-overview
+- **Release:** release_8
+- **Branch:** Feature/issue-IAC-114
+- **Tests Managed:** 8 generated
+
+### Outcome Summary
+- **Passed:** 0
+- **Failed:** 8
+- **Errors:** 0
+- **Skipped:** 0
+
+### Artifacts
+- **Execution Report:** [playwright-execution-report.md](artifacts/playwright-execution-report.md)
