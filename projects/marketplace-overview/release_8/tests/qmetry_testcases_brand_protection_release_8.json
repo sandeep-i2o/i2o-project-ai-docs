@@ -1,0 +1,579 @@
+[
+  {
+    "title": "Marketplace Overview tab is visible for BP-enabled users",
+    "objective": "Verify BP-enabled users can see the Marketplaces Overview tab under Brand Protector > Benefits.",
+    "preconditions": "User account has Brand Protection feature enabled and can access Benefits page.",
+    "steps": [
+      {
+        "step": "Log in and navigate to Brand Protector > Benefits.",
+        "expected_result": "Benefits page loads successfully."
+      },
+      {
+        "step": "Inspect the top navigation tabs.",
+        "expected_result": "Marketplaces Overview tab is visible alongside existing tabs."
+      }
+    ],
+    "expected_result": "BP-enabled users can access the Marketplaces Overview tab.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US001", "navigation"],
+    "requirement_mapping": "BP-MO-001-US001",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Marketplace Overview tab opens with default filters and Card view",
+    "objective": "Verify default page state after clicking Marketplaces Overview tab.",
+    "preconditions": "User is BP-enabled and on Brand Protector > Benefits.",
+    "steps": [
+      {
+        "step": "Click the Marketplaces Overview tab.",
+        "expected_result": "Marketplace Overview page opens."
+      },
+      {
+        "step": "Check default filter and view state.",
+        "expected_result": "All brands, all regions, last week calendar, and Card view are selected by default."
+      }
+    ],
+    "expected_result": "Dashboard opens in expected default state.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US001", "default-state"],
+    "requirement_mapping": "BP-MO-001-US001",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Marketplace Overview tab is hidden for users without BP feature",
+    "objective": "Validate access control for non-BP users.",
+    "preconditions": "User account does not have Brand Protection feature entitlement.",
+    "steps": [
+      {
+        "step": "Log in and navigate to Brand Protector area.",
+        "expected_result": "Navigation loads for available features."
+      },
+      {
+        "step": "Open Benefits and inspect top navigation tabs.",
+        "expected_result": "Marketplaces Overview tab is not displayed."
+      }
+    ],
+    "expected_result": "Non-BP users cannot see or access Marketplace Overview.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US001", "access-control"],
+    "requirement_mapping": "BP-MO-001-US001",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Brand filter lists all brands linked to the account",
+    "objective": "Verify account-scoped brand list in Brand filter.",
+    "preconditions": "User is on Marketplace Overview and account has multiple brands configured.",
+    "steps": [
+      {
+        "step": "Open Brand filter dropdown.",
+        "expected_result": "Dropdown opens and displays selectable brand list."
+      },
+      {
+        "step": "Compare displayed brands with account brand master list.",
+        "expected_result": "All account-linked brands are listed with no unrelated brands."
+      }
+    ],
+    "expected_result": "Brand filter options are accurate and account-specific.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "filters"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Region filter shows only regions enabled for the account",
+    "objective": "Verify region filter is limited to enabled regions.",
+    "preconditions": "User is on Marketplace Overview and account has a known region entitlement set.",
+    "steps": [
+      {
+        "step": "Open Region filter dropdown.",
+        "expected_result": "Region dropdown opens."
+      },
+      {
+        "step": "Validate listed regions against enabled account regions.",
+        "expected_result": "Only enabled regions (for example US, UK, DE) are displayed."
+      }
+    ],
+    "expected_result": "Region filter prevents selection of unauthorized regions.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "filters"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Calendar defaults to last week and View toggle defaults to Card",
+    "objective": "Validate initial filter and layout defaults on page load.",
+    "preconditions": "User navigates to Marketplace Overview.",
+    "steps": [
+      {
+        "step": "Load Marketplace Overview page.",
+        "expected_result": "Page and filter bar render."
+      },
+      {
+        "step": "Inspect calendar and view toggle defaults.",
+        "expected_result": "Calendar is set to last full week and view is Card."
+      }
+    ],
+    "expected_result": "Default calendar and layout match PRD behavior.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "default-state"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Switching Card to Table view retains active filter selections",
+    "objective": "Verify selected Brand/Region/Date context persists during view switch.",
+    "preconditions": "User has selected non-default brand, region, and date on Card view.",
+    "steps": [
+      {
+        "step": "Set Brand, Region, and Calendar to custom values on Card view.",
+        "expected_result": "Cards refresh based on selected filters."
+      },
+      {
+        "step": "Toggle View by setting from Card to Table.",
+        "expected_result": "Table view renders with same filter selections preserved."
+      }
+    ],
+    "expected_result": "User context is retained across view formats.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "view-toggle"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Combined Brand and Region filters scope KPI data intersection",
+    "objective": "Validate KPI aggregation respects intersection of selected brand and region filters.",
+    "preconditions": "User has access to multiple brands and regions with known KPI differences.",
+    "steps": [
+      {
+        "step": "Select Brand A and Region US, capture key KPI values.",
+        "expected_result": "Dashboard shows KPIs for Brand A in US only."
+      },
+      {
+        "step": "Change to Brand B and same region, then compare values.",
+        "expected_result": "KPI values update to reflect Brand B and differ as expected by data set."
+      }
+    ],
+    "expected_result": "KPI data changes based on filter intersection, not global totals.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "filters", "edge"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "No-result filter combination shows stable empty state",
+    "objective": "Ensure dashboard handles filter combinations with no data.",
+    "preconditions": "A brand-region-week combination exists with no KPI records.",
+    "steps": [
+      {
+        "step": "Select a known no-data brand-region-week combination.",
+        "expected_result": "Dashboard refreshes without runtime errors."
+      },
+      {
+        "step": "Inspect cards/table placeholders and labels.",
+        "expected_result": "UI shows consistent empty/zero state messaging instead of blank or broken widgets."
+      }
+    ],
+    "expected_result": "No-data scenarios are handled gracefully.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US002", "edge", "empty-state"],
+    "requirement_mapping": "BP-MO-001-US002",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Amazon activated card shows required KPI sections and counts",
+    "objective": "Validate Amazon card structure and KPI groups for activated marketplace.",
+    "preconditions": "Amazon marketplace is activated for selected brand/region.",
+    "steps": [
+      {
+        "step": "Open Marketplace Overview in Card view with Amazon activated.",
+        "expected_result": "Amazon card is visible with Activated badge."
+      },
+      {
+        "step": "Verify KPI grouping and counts on Amazon card.",
+        "expected_result": "Analytics (4), Brand Violation (2), and Enforcement Centre (4) sections are present."
+      }
+    ],
+    "expected_result": "Amazon activated card fully matches KPI definition in PRD.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US003", "card-view"],
+    "requirement_mapping": "BP-MO-001-US003",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Walmart activated card excludes Brand Violation section",
+    "objective": "Verify Walmart card follows marketplace-specific KPI applicability rules.",
+    "preconditions": "Walmart marketplace is activated for selected brand/region.",
+    "steps": [
+      {
+        "step": "Open Card view where Walmart is activated.",
+        "expected_result": "Walmart card is visible with Activated badge."
+      },
+      {
+        "step": "Inspect KPI sections on Walmart card.",
+        "expected_result": "Only Analytics (4) and Enforcement Centre (4) are present; Brand Violation section is not shown."
+      }
+    ],
+    "expected_result": "Walmart card does not display unsupported Brand Violation KPIs.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US003", "card-view", "marketplace-rules"],
+    "requirement_mapping": "BP-MO-001-US003",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Non-activated marketplaces show Initiate Trial and summary KPIs",
+    "objective": "Validate trial-state card rendering for eBay/Target.",
+    "preconditions": "eBay and/or Target are not activated for selected account context.",
+    "steps": [
+      {
+        "step": "Open Card view with non-activated marketplace present.",
+        "expected_result": "Non-activated marketplace card renders."
+      },
+      {
+        "step": "Inspect status and KPI fields.",
+        "expected_result": "Initiate Trial button and summary KPIs (No. of Listings, No. of Resellers, WoW) are shown."
+      }
+    ],
+    "expected_result": "Trial-state marketplaces follow reduced KPI design.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US003", "card-view", "trial"],
+    "requirement_mapping": "BP-MO-001-US003",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Marketplace status changes from trial to activated after activation",
+    "objective": "Verify card state transition when marketplace activation status changes.",
+    "preconditions": "A marketplace is initially non-activated and then activated for same account.",
+    "steps": [
+      {
+        "step": "Load Card view while marketplace is non-activated.",
+        "expected_result": "Card shows Initiate Trial state."
+      },
+      {
+        "step": "Activate the marketplace and reload page.",
+        "expected_result": "Card switches to Activated badge and full KPI section layout."
+      }
+    ],
+    "expected_result": "Activation state transitions correctly on next load.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US003", "state-transition", "edge"],
+    "requirement_mapping": "BP-MO-001-US003",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Zero KPI values are displayed as 0 in Card view",
+    "objective": "Ensure KPI rendering preserves explicit zero values.",
+    "preconditions": "Selected marketplace-week has KPI values equal to zero.",
+    "steps": [
+      {
+        "step": "Open Card view for known zero-value dataset.",
+        "expected_result": "Marketplace card displays KPI fields."
+      },
+      {
+        "step": "Inspect KPI values across sections.",
+        "expected_result": "Zero values render as 0 and are not blank, null, or hidden."
+      }
+    ],
+    "expected_result": "Users can distinguish zero performance from missing data.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US003", "card-view", "edge"],
+    "requirement_mapping": "BP-MO-001-US003",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Table view renders one row per marketplace with KPI parity",
+    "objective": "Verify Table view shows all marketplaces and KPI columns aligned with Card view.",
+    "preconditions": "User is on Marketplace Overview with accessible marketplace data.",
+    "steps": [
+      {
+        "step": "Toggle to Table view.",
+        "expected_result": "Marketplace table is displayed."
+      },
+      {
+        "step": "Check table rows and KPI columns against Card view definitions.",
+        "expected_result": "One row per marketplace is present and KPI columns match Card view data model."
+      }
+    ],
+    "expected_result": "Table format provides complete parity with Card data.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US004", "table-view"],
+    "requirement_mapping": "BP-MO-001-US004",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Walmart Brand Violation columns display '--' in Table view",
+    "objective": "Validate non-applicable KPI display rule in table.",
+    "preconditions": "Walmart row is present in Table view.",
+    "steps": [
+      {
+        "step": "Open Table view and locate Walmart row.",
+        "expected_result": "Walmart row is visible."
+      },
+      {
+        "step": "Inspect Total Brand Violation and Violations Closed columns.",
+        "expected_result": "Both columns show '--' instead of 0 or blank."
+      }
+    ],
+    "expected_result": "Non-applicable KPI columns follow placeholder convention.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US004", "table-view", "marketplace-rules"],
+    "requirement_mapping": "BP-MO-001-US004",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Non-activated marketplace row shows Initiate Trial in status column",
+    "objective": "Verify status/action rendering in table for trial marketplaces.",
+    "preconditions": "At least one marketplace (for example eBay) is non-activated.",
+    "steps": [
+      {
+        "step": "Open Table view and locate non-activated marketplace row.",
+        "expected_result": "Row is visible in table."
+      },
+      {
+        "step": "Inspect Status column value.",
+        "expected_result": "Initiate Trial action/button is displayed for that row."
+      }
+    ],
+    "expected_result": "Table status behavior matches Card trial-state behavior.",
+    "priority": "High",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US004", "table-view", "trial"],
+    "requirement_mapping": "BP-MO-001-US004",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Table default sort and pagination controls are available",
+    "objective": "Validate MVP table sorting and pagination behavior.",
+    "preconditions": "User is in Table view.",
+    "steps": [
+      {
+        "step": "Open Table view and inspect row order.",
+        "expected_result": "Rows are sorted by marketplace name alphabetically by default."
+      },
+      {
+        "step": "Inspect footer controls.",
+        "expected_result": "Rows-per-page and pagination controls are visible (default 10 rows/page)."
+      }
+    ],
+    "expected_result": "Table scalability controls render as specified.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US004", "table-view", "pagination"],
+    "requirement_mapping": "BP-MO-001-US004",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Initiate Trial sends support email with required subject and body",
+    "objective": "Verify email trigger content for non-activated marketplace trial request.",
+    "preconditions": "Non-activated marketplace is visible and support email integration (or mailto) is configured.",
+    "steps": [
+      {
+        "step": "Click Initiate Trial on a non-activated marketplace for selected Brand X.",
+        "expected_result": "Email trigger action is initiated."
+      },
+      {
+        "step": "Inspect generated email payload/content.",
+        "test_data": "Brand=Brand X, Marketplace=eBay",
+        "expected_result": "Subject is 'Initiate L1 report for Brand X' and body includes 'Hey Team, can you run L1 audit for Brand X on eBay'."
+      }
+    ],
+    "expected_result": "Support email request is generated with exact content pattern.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US005", "email", "trial"],
+    "requirement_mapping": "BP-MO-001-US005",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Trial request success confirmation is displayed to user",
+    "objective": "Ensure successful trial request provides visible user feedback.",
+    "preconditions": "Initiate Trial action succeeds.",
+    "steps": [
+      {
+        "step": "Click Initiate Trial for a non-activated marketplace.",
+        "expected_result": "Request submission starts."
+      },
+      {
+        "step": "Observe post-action message and button state.",
+        "expected_result": "Confirmation 'Trial request sent successfully' appears; button may change to Requested/disabled."
+      }
+    ],
+    "expected_result": "User receives clear success feedback and duplicate intent is discouraged.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US005", "email", "ux"],
+    "requirement_mapping": "BP-MO-001-US005",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Multi-brand selection requires explicit brand choice before trial email",
+    "objective": "Validate ambiguity handling when multiple brands are selected.",
+    "preconditions": "User selects multiple brands in Brand filter and non-activated marketplace is available.",
+    "steps": [
+      {
+        "step": "With multiple brands selected, click Initiate Trial.",
+        "expected_result": "System evaluates brand context."
+      },
+      {
+        "step": "Inspect prompt behavior.",
+        "expected_result": "User is prompted to choose a specific brand before sending the request."
+      }
+    ],
+    "expected_result": "System avoids sending ambiguous trial requests.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US005", "email", "edge"],
+    "requirement_mapping": "BP-MO-001-US005",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Calendar defaults to last complete Monday-Sunday week",
+    "objective": "Verify exact week-bounding logic for default calendar.",
+    "preconditions": "System date is known and weekly boundaries can be validated.",
+    "steps": [
+      {
+        "step": "Load Marketplace Overview on a weekday (example Thursday).",
+        "expected_result": "Calendar is auto-populated."
+      },
+      {
+        "step": "Compare selected range to expected last complete Monday-Sunday week.",
+        "expected_result": "Default range equals previous full week, not current partial week."
+      }
+    ],
+    "expected_result": "Calendar consistently opens on most recent complete week.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US006", "calendar", "date-logic"],
+    "requirement_mapping": "BP-MO-001-US006",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Weekly data refresh updates dashboard KPIs for latest complete week",
+    "objective": "Validate successful aggregation job output is reflected in Marketplace Overview.",
+    "preconditions": "Weekly refresh job is runnable and source module data exists for last complete week.",
+    "steps": [
+      {
+        "step": "Execute or wait for weekly refresh job completion.",
+        "expected_result": "Aggregation job reports success."
+      },
+      {
+        "step": "Load Marketplace Overview and verify key KPIs against refreshed source snapshots.",
+        "expected_result": "Dashboard values match the latest complete week's aggregated values."
+      }
+    ],
+    "expected_result": "Dashboard reflects updated weekly data after successful refresh.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US006", "data-refresh", "backend"],
+    "requirement_mapping": "BP-MO-001-US006",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  },
+  {
+    "title": "Failed or delayed weekly refresh shows stale data indicator",
+    "objective": "Ensure stale-data fallback behavior is visible when aggregation is unavailable.",
+    "preconditions": "Simulate weekly job failure or source pipeline delay.",
+    "steps": [
+      {
+        "step": "Force or simulate aggregation job failure/delay state.",
+        "expected_result": "Latest data generation is unavailable."
+      },
+      {
+        "step": "Load Marketplace Overview and inspect data status messaging.",
+        "expected_result": "Last available week data is shown along with stale data indicator containing date range."
+      }
+    ],
+    "expected_result": "System degrades gracefully when refresh cannot complete.",
+    "priority": "Medium",
+    "status": "To Do",
+    "labels": ["BP-MO-001-US006", "data-refresh", "edge"],
+    "requirement_mapping": "BP-MO-001-US006",
+    "module": "brand_protection",
+    "release": "release_8",
+    "type": "Manual",
+    "automation_status": "Not Automated"
+  }
+]
