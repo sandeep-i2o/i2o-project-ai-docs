@@ -18,7 +18,7 @@ depends_on:
 
 ## Context
 
-This story implements `MarketplaceOverviewWeeklyAggregationTask` in `i2o-scheduler`. The task runs every Monday at 06:00 UTC, reads from five confirmed BQ source tables in `CC_I2O_DATA_MART`, aggregates KPIs per `(org_id, marketplace, brand_id, region, week_start)`, and writes to `marketplace_kpi_weekly_snapshot`. The task includes retry logic (3 retries, 30-min backoff), audit logging, and staleness flag management.
+This story implements `MarketplaceOverviewWeeklyAggregationTask` in `i2o-scheduler`. The task runs every Monday at 06:00 UTC, reads from five confirmed BQ source tables in `CC_I2O_DATA_MART`, aggregates KPIs per `(org_id, marketplace, brand_id, region, week_start)`, and writes to the PostgreSQL `marketplace_kpi_weekly_snapshot` table. The task includes retry logic (3 retries, 30-min backoff), audit logging in PostgreSQL, and staleness flag management.
 
 ## Module: `i2o-scheduler`
 
@@ -45,13 +45,13 @@ com.corecompete.i2o.scheduler.task/
 | `test_purchase` | `bp_wbr_detail` | `SUM(test_purchase)` |
 | `no_of_listings` | `viz_lost_sales` | `COUNT(DISTINCT listing_id)` — trial marketplaces only |
 | `no_of_resellers` | `reseller_progress_by_week` | `COUNT(DISTINCT reseller_id)` — trial marketplaces only |
-| `wow_change_pct` | `marketplace_kpi_weekly_snapshot` (self-join) | `(current.lost_sales - prev.lost_sales) / NULLIF(prev.lost_sales, 0) * 100` |
+| `wow_change_pct` | `marketplace_kpi_weekly_snapshot` (self-join in PostgreSQL) | `(current.lost_sales - prev.lost_sales) / NULLIF(prev.lost_sales, 0) * 100` |
 
 ### Task Lifecycle
 
-1. Log task start to `marketplace_scheduler_audit_log` (`status='RETRYING'`).
+1. Log task start to PostgreSQL `marketplace_scheduler_audit_log` (`status='RETRYING'`).
 2. Execute BQ aggregation queries for each source table.
-3. Merge results into `marketplace_kpi_weekly_snapshot` (INSERT OR REPLACE by `(org_id, week_start, marketplace, brand_id, region)` partition key).
+3. Merge results into the PostgreSQL `marketplace_kpi_weekly_snapshot` (UPSERT by `(org_id, week_start, marketplace, brand_id, region)` unique constraint).
 4. Set `data_staleness_flag = FALSE` for rows written this run.
 5. Update audit log `status='SUCCESS'`, `completed_at`.
 
@@ -72,14 +72,14 @@ scheduler.marketplace-overview.cron=0 6 * * MON
 ### `org_id` Handling
 
 - The task must iterate over all active org/marketplace combinations from `org_market_mapping`.
-- Each BQ INSERT row must include the correct `org_id`.
-- All BQ SELECT queries must be scoped with `WHERE org_id = ?` for the current org.
+- Each PostgreSQL INSERT row must include the correct `org_id`.
+- All BigQuery SELECT queries must be scoped with `WHERE org_id = ?` for the current org.
 
 ## Acceptance Criteria
 
 1. Task is registered with cron `0 6 * * MON` and runs at Monday 06:00 UTC.
 2. Task reads from all 5 BQ source tables using the formulas in Section 18.
-3. Task writes aggregated rows to `marketplace_kpi_weekly_snapshot` with correct `org_id` per tenant.
+3. Task writes aggregated rows to the PostgreSQL `marketplace_kpi_weekly_snapshot` with correct `org_id` per tenant.
 4. `data_staleness_flag = FALSE` is set on successful writes.
 5. On failure: retry 3× with 30-minute backoff; after all retries, sets `status='FAILED'` in audit log and triggers PagerDuty alert.
 6. `data_staleness_flag = TRUE` is set for rows where aggregation failed.

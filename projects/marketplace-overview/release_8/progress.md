@@ -6,9 +6,9 @@
 |-------|--------|
 | PRD Review | ✅ Complete |
 | Knowledge Base Review | ✅ Complete |
-| Architecture Document | ✅ Complete (2026-03-04) |
-| Architecture Review / Checklist | ✅ Complete (embedded — Section 15, 9/10 confidence) |
-| Epic & Story Generation | ✅ Complete (2026-03-04) — 4 Epics, 11 Stories (local) |
+| Architecture Document | ✅ Complete (updated 2026-03-13) |
+| Architecture Review / Checklist | ✅ Complete (embedded delta checklist — Section 15, 2026-03-13) |
+| Epic & Story Generation | ✅ Complete (2026-03-04) — 4 Epics, 11 Stories (updated 2026-03-13 for PostgreSQL alignment) |
 | Implementation | ✅ Complete — EPIC-002 (IAC-115) backend implemented & API testing verified |
 
 ## Open Items (Pre-Implementation)
@@ -17,6 +17,37 @@
 3. ✅ Resolved: `org_market_mapping` table confirmed in `i2o-master-data`
 4. 🟡 Confirm eBay/Target BQ data availability for trial KPIs (STORY-010)
 5. 🟡 Confirm `bp_wbr_detail` column names for Enforcement Centre KPIs (STORY-010)
+6. 🔴 **[GATE]** Apply PostgreSQL DDL migration for `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` before scheduler deployment
+
+---
+
+## Checkpoint — 2026-03-13: Architecture Update (PostgreSQL Snapshot + Audit)
+
+### Request Implemented
+- Updated architecture per release_8 change: `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` are defined as PostgreSQL tables with mandatory `org_id`.
+
+### Files Updated
+- `docs/design/architecture.md`
+- `docs/design/ADR/adr-13-03-2026.MD`
+- `progress.md`
+- `tickets/epics/EPIC-002-backend-reseller-api.md`
+- `tickets/epics/EPIC-003-scheduler-aggregation.md`
+- `tickets/stories/STORY-009-scheduler-bq-schema.md`
+- `tickets/stories/STORY-010-scheduler-aggregation-task.md`
+
+### Workflow Checkpoints (generate-update-architecture)
+| Step | Status |
+|------|--------|
+| 1. Context loaded | ✅ Complete |
+| 2. Project/module selection done | ✅ Complete |
+| 3. Architecture draft/update complete | ✅ Complete |
+| 4. User review complete | ✅ Complete (direct update request applied) |
+| 5. Checklist run complete | ✅ Complete (embedded architecture checklist updated in Section 15) |
+| 6. Gaps remediated | ✅ Complete |
+| 7. Final architecture delivered | ✅ Complete |
+
+### Notes
+- `.aiccelerate/checklist/architect-checklist.md` was not present in this workspace. Delta validation was completed using the embedded architecture quality checklist section and updated evidence.
 
 ---
 
@@ -155,3 +186,57 @@ Commit: `28a321d9a` — 32 files, 2,623 insertions
 
 ### Artifacts
 - **Execution Report:** [playwright-execution-report.md](artifacts/playwright-execution-report.md)
+
+---
+
+## Checkpoint — 2026-03-13 10:00: Epic & Story Alignment (PostgreSQL)
+
+### Request Implemented
+- Aligned existing Jira Epics and Stories with the PostgreSQL storage mandate for KPI snapshots and audit logs.
+- Updated `EPIC-002`, `EPIC-003`, `STORY-009`, and `STORY-010` to replace BigQuery sink references with PostgreSQL DDL and upsert logic.
+
+### Verification
+- Verified all 4 ticket files contain correct PostgreSQL DDL and tenant-isolated `org_id` logic.
+- Verified references to `CC_I2O_DATA_MART` as a sink have been removed from updated stories.
+
+---
+
+## Checkpoint — 2026-03-13 10:36: QA Automation (IAC-114)
+
+### Execution Context
+- **Project:** marketplace-overview
+- **Release:** release_8
+- **Branch:** Feature/issue-IAC-114
+- **Tests Managed:** 5 generated
+
+### Outcome Summary
+- **Passed:** 3
+- **Failed:** 2
+- **Errors:** 0
+- **Skipped:** 0
+
+### Artifacts
+- **Execution Report:** [playwright-execution-report.md](artifacts/playwright-execution-report.md)
+
+---
+
+## Checkpoint — 2026-03-13 11:40: QA Automation (IAC-114)
+
+### Execution Context
+- **Project:** marketplace-overview
+- **Release:** release_8
+- **Branch:** Feature/issue-IAC-114
+- **Tests Managed:** 5 generated
+
+### Outcome Summary
+- **Passed:** 3
+- **Failed:** 2
+- **Errors:** 0
+- **Skipped:** 0
+
+### Artifacts
+- **Execution Report:** [playwright-execution-report.md](artifacts/playwright-execution-report.md)
+### Video Artifacts
+- **Video Root:** `artifacts/playwright-results`
+- **Video Inventory:** `artifacts/playwright-videos.txt`
+- **Video Count (.webm):** 5

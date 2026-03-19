@@ -18,13 +18,13 @@ stories:
 
 ## Business Value (Charlie-Conductor)
 
-The backend provides two new lightweight endpoints (`GET /marketplace-overview/config` and `POST /marketplace-overview/initiate-trial`) that enable the Marketplace Overview dashboard and the trial request email flow respectively. All KPI data retrieval reuses the existing `getCardData`/`getGridCardData` generic query engine — no new data-fetch endpoints are introduced. This keeps the architecture minimal and reuses the existing BQ-backed query framework while delivering the config and email capabilities required by the PRD.
+The backend provides two new lightweight endpoints (`GET /marketplace-overview/config` and `POST /marketplace-overview/initiate-trial`) that enable the Marketplace Overview dashboard and the trial request email flow respectively. All KPI data retrieval reuses the existing `getCardData`/`getGridCardData` generic query engine which reads from the PostgreSQL `marketplace_kpi_weekly_snapshot` table — no new data-fetch endpoints are introduced. This keeps the architecture minimal and reuses the existing framework while delivering the config and email capabilities required by the PRD.
 
 ## Technical Feasibility (Bob-Builder)
 
 - **Stack:** Spring Boot 3.x, existing `i2o-reseller` Controller/Service/DTO pattern, existing Keycloak Bearer interceptor.
 - **New additions:** 1 controller, 2 services, 2 DTOs, 1 enum — all within a new `marketplaceoverview` sub-package.
-- **BQ isolation:** `org_id` is extracted from the Keycloak token server-side and injected as a mandatory `WHERE` clause into every BigQuery query — never trusted from the client.
+- **Tenant isolation:** `org_id` is extracted from the Keycloak token server-side and injected as a mandatory `WHERE` clause into every PostgreSQL query — never trusted from the client.
 - **Effort estimate:** Medium (1–2 sprints for all stories).
 - **Dependency:** `org_market_mapping` table in `i2o-master-data` exists (confirmed); no schema changes needed.
 
@@ -43,7 +43,7 @@ This epic covers all changes inside `i2o-reseller`:
 | Security | `org_id` from Keycloak token; `brandName` derived server-side; rate limiting (1/hour/marketplace/brand) |
 | Config registration | **Owned by EPIC-004 / STORY-011** — see EPIC-004 for componentId registration scope. EPIC-002 must verify that calls to `getCardData`/`getGridCardData` with registered componentIds succeed in DEV as an integration smoke-test (cross-reference only; no duplicate execution). *(Remediates F-L-001, F-H-003)* |
 | Unit tests | JUnit 5 + Mockito ≥ 80% service coverage |
-| Integration tests | `@SpringBootTest` for `MarketplaceOverviewController` with mock BQ + mock PostgreSQL; cross-tenant isolation test |
+| Integration tests | `@SpringBootTest` for `MarketplaceOverviewController` with mock PostgreSQL; cross-tenant isolation test |
 
 ## Dependencies
 
