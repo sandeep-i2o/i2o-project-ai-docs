@@ -18,7 +18,7 @@ depends_on:
 
 ## Context
 
-This story implements `MarketplaceOverviewWeeklyAggregationTask` in `i2o-scheduler`. The task runs every Monday at 06:00 UTC, reads from five confirmed BQ source tables in `CC_I2O_DATA_MART`, aggregates KPIs per `(org_id, marketplace, brand_id, region, week_start)`, and writes to the PostgreSQL `marketplace_kpi_weekly_snapshot` table. The task includes retry logic (3 retries, 30-min backoff), audit logging in PostgreSQL, and staleness flag management.
+This story implements `MarketplaceOverviewWeeklyAggregationTask` in `i2o-scheduler`. The task runs every Monday at 06:00 UTC, reads from five confirmed BQ source tables in `CC_I2O_DATA_MART`, aggregates KPIs per `(org_id, marketplace, brand, region, week_start)`, and writes to the PostgreSQL `marketplace_kpi_weekly_snapshot` table. The task includes retry logic (3 retries, 30-min backoff), audit logging in PostgreSQL, and staleness flag management.
 
 ## Module: `i2o-scheduler`
 
@@ -51,7 +51,7 @@ com.corecompete.i2o.scheduler.task/
 
 1. Log task start to PostgreSQL `marketplace_scheduler_audit_log` (`status='RETRYING'`).
 2. Execute BQ aggregation queries for each source table.
-3. Merge results into the PostgreSQL `marketplace_kpi_weekly_snapshot` (UPSERT by `(org_id, week_start, marketplace, brand_id, region)` unique constraint).
+3. Merge results into the PostgreSQL `marketplace_kpi_weekly_snapshot` (UPSERT by `(org_id, week_start, marketplace, brand, region)` unique constraint).
 4. Set `data_staleness_flag = FALSE` for rows written this run.
 5. Update audit log `status='SUCCESS'`, `completed_at`.
 

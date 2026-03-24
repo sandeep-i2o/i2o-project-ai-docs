@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS marketplace_kpi_weekly_snapshot (
   week_start            DATE NOT NULL,
   week_end              DATE NOT NULL,
   marketplace           VARCHAR(32) NOT NULL,   -- AMAZON | WALMART | EBAY | TARGET
-  brand_id              BIGINT NOT NULL,
+  brand                 VARCHAR(255) NOT NULL,
   region                VARCHAR(32) NOT NULL,   -- US | UK | DE | etc.
   -- Analytics KPIs
   lost_sales            NUMERIC(18,2),
@@ -54,11 +54,11 @@ CREATE TABLE IF NOT EXISTS marketplace_kpi_weekly_snapshot (
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT uq_marketplace_kpi_snapshot
-    UNIQUE (org_id, week_start, marketplace, brand_id, region)
+    UNIQUE (org_id, week_start, marketplace, brand, region)
 );
 
 CREATE INDEX IF NOT EXISTS idx_marketplace_kpi_snapshot_lookup
-  ON marketplace_kpi_weekly_snapshot (org_id, brand_id, region, week_start DESC);
+  ON marketplace_kpi_weekly_snapshot (org_id, brand, region, week_start DESC);
 ```
 
 ### DDL: `marketplace_scheduler_audit_log`
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS marketplace_scheduler_audit_log (
 ## Acceptance Criteria
 
 1. `marketplace_kpi_weekly_snapshot` table exists in all target PostgreSQL environments with correct schema.
-2. Table has primary key and lookup index on `(org_id, brand_id, region, week_start)`.
+2. Table has primary key and lookup index on `(org_id, brand, region, week_start)`.
 3. `org_id` is `NOT NULL` (mandatory for tenant isolation).
 4. `data_staleness_flag` defaults to `FALSE`.
 5. `marketplace_scheduler_audit_log` table exists in all environments with correct schema.

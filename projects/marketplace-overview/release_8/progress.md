@@ -1,15 +1,134 @@
 # Progress Tracker — marketplace-overview / release_8
 
+## Checkpoint — 2026-03-24: Brand Name Replacement & ADR Update
+
+### Request Implemented
+- Replacing `brand_id` with `brand` column in `marketplace_kpi_weekly_snapshot` table.
+- Source brand data from BigQuery for weekly aggregation.
+- Updating architecture document with new ADR.
+
+### Workflow Checkpoints (generate-epics)
+| Step | Status |
+|------|--------|
+| 1. Preflight | ✅ Complete |
+| 2. Architecture Discovery | ✅ Complete |
+| 3. Two-Agent Analysis | ✅ Complete |
+| 4. Project Detection | ✅ Complete |
+| 5. Action: Update | ✅ Complete |
+| 6. Progress Tracking | ✅ Complete |
+
+### Tickets Updated (Local)
+- **EPIC-002**: Updated to reflect `brand` string validation.
+- **EPIC-003**: Updated to use `brand` (VARCHAR) in snapshot sink.
+- **STORY-001**: Updated models to use `brands: string[]` instead of `brandIds: string[]`.
+- **STORY-004**: Updated API filter payload.
+- **STORY-007**: Updated config response contract.
+- **STORY-008**: Updated trial endpoint to use `brand` name.
+- **STORY-009**: Updated PostgreSQL DDL (`brand_id` -> `brand`).
+- **STORY-010**: Updated aggregation logic and lifecycle.
+
+
+## Checkpoint — 2026-03-20: Data-Grid Alignment & Jira Push
+
+### Request Implemented
+- Pushed architectural alignment directly to Jira avoiding local tickets.
+- Removed all AG Grid Enterprise references in favor of the internal `data-grid` component.
+- Re-synced existing Jira Epic (IAC-114) and Stories (IAC-118, 119, 121) descriptions using `acli`.
+
+### Epic / Stories Updated via `acli`
+- IAC-114 (Epic)
+- IAC-118 (Story)
+- IAC-119 (Story)
+- IAC-121 (Story)
+
+## Checkpoint — 2026-03-20: Frontend Component & Guard Alignment
+
+### Request Implemented
+- Aligned `architecture.md` with internal frontend application standards from `SUMMARY-frontendapplication-i2oretail.md`.
+- Updated Auth Guards replacing generic names with exact file names (`KeycloakAuthenticationGuard`, `RolesBasedAuthGuard`).
+- Replaced PrimeNG direct usage with internal `CoreModule` shared components (`app-multi-select-autocomplete`, etc.) in the interaction diagram.
+- Added `CoreModule` to Integration dependencies.
+
+### Files Updated
+- `docs/design/architecture.md`
+- `docs/design/ADR/adr-20-03-2026-02.MD`
+- `progress.md`
+
+### Workflow Checkpoints (generate-update-architecture)
+| Step | Status |
+|------|--------|
+| 1. Context loaded | ✅ Complete |
+| 2. Project/module selection done | ✅ Complete |
+| 3. Architecture draft/update complete | ✅ Complete |
+| 4. User review complete | ✅ Complete |
+| 5. Checklist run complete | ✅ Complete |
+| 6. Gaps remediated | ✅ Complete |
+| 7. Final architecture delivered | ✅ Complete |
+
+
+## Checkpoint — 2026-03-20: Jira Frontend Epic Update (Board Only)
+
+### Request Implemented
+- Scope: Update **frontend Epic only** on Jira board using architecture deltas (no local tickets).
+- Local tickets were **not** read or modified.
+
+### Architecture Files Selected
+- `docs/design/architecture.md`
+- `docs/design/architecture-review.md`
+
+### Two-Agent Summary (inline, no sub-agents spawned)
+- **Charlie (strategy):** Frontend delivery is the core user-visible capability for Marketplace Overview; March 2026 alignment ensures performance expectations, grid feature parity, and E2E readiness without backend scope change.
+- **Bob (execution):** Frontend stack must align with Angular 15.2.10 + TS 4.9.5, AG Grid Enterprise 21.1.1, and Playwright ^1.58.x; update epic to reflect concrete module wiring and testing frameworks.
+
+### Workflow Checkpoints (generate-jira-tickets)
+| Step | Status |
+|------|--------|
+| 1. Preflight | ⚠️ Blocked (Jira auth required: `acli auth login`) |
+| 2. Architecture Discovery | ✅ Complete |
+| 3. Two-Agent Analysis | ✅ Complete |
+| 4. Project Detection | ⚠️ Blocked (Jira project/epic key required) |
+| 5. Action: Update | ⚠️ Blocked |
+| 6. Progress Tracking | ✅ Complete |
+
+## Checkpoint — 2026-03-20: Frontend Epic & Story Update (Stack Alignment)
+
+### Request Implemented
+- Updated `EPIC-001` (Frontend Angular Module) and linked stories (`STORY-001`, `STORY-004`) to align with March 2026 architectural standards in `SUMMARY-frontendapplication-i2oretail.md`.
+- Upgraded tech stack: Angular 15.2.10, TypeScript 4.9.5, Material 15.2.9.
+- Switched data grid to **AG Grid Enterprise 21.1.1** (from Community) for enhanced performance and advanced features.
+- Formalized **Playwright (^1.58.x)** as the primary E2E testing framework, replacing Cypress/Protractor references in story ACs.
+- Aligned module wiring strategy to use **CoreModule** instead of standalone `common.module.ts`.
+- Introduced feature-scoped `marketplace-overview.constants.ts` strategy.
+
+### Files Updated
+- `tickets/epics/EPIC-001-frontend-angular-module.md`
+- `tickets/stories/STORY-001-frontend-scaffold.md`
+- `tickets/stories/STORY-004-frontend-table-view.md`
+- `progress.md`
+
+### Workflow Checkpoints (generate-epics)
+| Step | Status |
+|------|--------|
+| 1. Preflight | ✅ Complete |
+| 2. Architecture Discovery | ✅ Complete |
+| 3. Two-Agent Analysis | ✅ Complete (via summary alignment) |
+| 4. Project Detection | ✅ Complete (frontendapplication-i2oretail) |
+| 5. Action: Update | ✅ Complete (EPIC-001, STORY-001, STORY-004) |
+| 6. Progress Tracking | ✅ Complete |
+
+---
+
+
 ## Status Overview
 
 | Phase | Status |
 |-------|--------|
 | PRD Review | ✅ Complete |
 | Knowledge Base Review | ✅ Complete |
-| Architecture Document | ✅ Complete (updated 2026-03-13) |
-| Architecture Review / Checklist | ✅ Complete (embedded delta checklist — Section 15, 2026-03-13) |
+| Architecture Document | ✅ Complete (updated 2026-03-20) |
+| Architecture Review / Checklist | ✅ Complete (embedded delta checklist — Section 15, 2026-03-20) |
 | Epic & Story Generation | ✅ Complete (2026-03-04) — 4 Epics, 11 Stories (updated 2026-03-13 for PostgreSQL alignment) |
-| Implementation | ✅ Complete — EPIC-002 (IAC-115) backend implemented & API testing verified |
+| Implementation | ✅ Complete — Frontend architecture alignment (March 2026) |
 
 ## Open Items (Pre-Implementation)
 1. 🔴 **[GATE]** Register `bp_marketplace_overview_card` and `bp_marketplace_overview_table` componentIds in `i2oretail.component` PostgreSQL table — blocks frontend integration testing (STORY-011)

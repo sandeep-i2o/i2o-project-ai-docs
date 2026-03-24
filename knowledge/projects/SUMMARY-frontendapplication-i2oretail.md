@@ -156,6 +156,8 @@ flowchart LR
 
 ### Representative inventory (by category)
 
+For any new components that are being developer, try to re-use existing components as mentioned in examples below. If not found, then create new components.
+
 | Category | Examples (folders under `common/`) |
 |----------|-------------------------------------|
 | **Grids & reports** | `data-grid`, `report-component`, `report-grid-cell-renderer`, `full-edit-grid`, `summary`, `grid-header`, `grid-card` |

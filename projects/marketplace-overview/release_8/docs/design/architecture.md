@@ -1,5 +1,5 @@
 # Architecture Document — Marketplace Overview
-**Project:** BP-MO-001 | **Release:** release_8 | **Date:** 2026-03-13  
+**Project:** BP-MO-001 | **Release:** release_8 | **Date:** 2026-03-24  
 **Status:** Draft
 
 ---
@@ -32,7 +32,11 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 ## 2. Constraints & Assumptions
 
-- **Reuse existing stack**: Angular 15 frontend, Spring Boot 3.x backends, BigQuery source warehouse, PostgreSQL metadata and KPI snapshot DB.
+- **Reuse existing stack**: **Angular 15.2.10** frontend, **Spring Boot 3.x** backends, BigQuery source warehouse, PostgreSQL metadata and KPI snapshot DB.
+- **Languages/Libraries**: **TypeScript 4.9.5**, **Angular Material 15.2.9**, **RxJS 7.5.7**.
+- **Data Grid**: **Common data-grid** (specifically for the Marketplace Table view).
+- **Charts**: **ECharts 6.0.0** and **FusionCharts 3.23.0**.
+- **Testing**: **Jasmine/Karma** (Unit), **Protractor** and **Playwright ^1.58.x** (E2E).
 - **No new microservice** required for MVP — extend `i2o-reseller` with a new Marketplace Overview module.
 - **Reuse existing generic APIs**: `POST /widget/getCardData` and `POST /report/getGridCardData` already exist in `i2o-reseller`; the Marketplace Overview feature will call these APIs with specific `query_id` and filter parameters — **no new data-fetch endpoints will be introduced** (decision confirmed 2026-03-04).
 - **Weekly data refresh** only — KPI data is pre-aggregated weekly via `i2o-scheduler`.
@@ -96,7 +100,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | Config / Filter API | New `GET /marketplace-overview/config` endpoint in `i2o-reseller` | Only new endpoint needed; returns brands, regions, activation status, default week |
 | Initiate Trial API | New `POST /marketplace-overview/initiate-trial` endpoint in `i2o-reseller` | Calls `i2o-email-service` internally |
 | Multi-brand Trial Enforcement | Frontend prompts user to select a single brand before firing request | Frontend-only enforcement (confirmed 2026-03-04); backend trusts the single `brandId` sent in the request payload |
-| KPI Aggregation Store | PostgreSQL tables `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` (both include `org_id`) | Release_8 update mandates relational storage with tenant key + durable scheduler audit trail |
+| KPI Aggregation Store | PostgreSQL tables `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` (both include `org_id`) | Release_8 update mandates relational storage with tenant key + durable scheduler audit trail. **Update 2026-03-24:** `brand_id` replaced by `brand` name from BigQuery. |
 | BQ Source Tables | `CC_I2O_DATA_MART.viz_lost_sales`, `reseller_progress_by_week`, `listings_progress_by_week`, `viz_reseller_filtered_detail`, `bp_wbr_detail` | Confirmed from `query_described.csv` — all pre-existing mart tables |
 | Weekly Refresh | New `MarketplaceOverviewWeeklyAggregationTask` in `i2o-scheduler` | Scheduler already runs weekly migration tasks |
 | Email Notification | Existing `i2o-email-service` via REST call from `i2o-reseller` | Centralized email service, avoids duplication |
@@ -112,13 +116,25 @@ This document describes the technical architecture for the **Marketplace Overvie
 | `i2o-email-service` | i2o-retail/i2o-email-service | No change — consumed as-is |
 | `i2o-master-data` | i2o-retail/i2o-master-data | Existing `org_market_mapping` table used for activation status — no schema change required |
 
-### 4.3 Update Delta (2026-03-13)
+### 4.3 Update Delta
+#### 2026-03-20: Frontend Alignment Update
+- **What changed:** Updated architecture to align with **March 2026** frontend repository standards.
+- **Key updates:** Updated framework/library versions (Angular 15.2.10, TS 4.9.5), switched grid component to **Common data-grid**, added **Playwright ^1.58.x** for E2E testing, and formalized constant strategy.
+- **Why:** To ensure the design matches the latest tech stack and testing requirements in `frontendapplication-i2oretail`.
+- **Impact on modules:** **Frontend only**. Existing backend API contracts and data models remain valid.
+- **ADR:** [ADR 20-03-2026](ADR/adr-20-03-2026.MD)
 
+#### 2026-03-24: Brand Name Replacement Update
+- **What changed:** Replaced `brand_id` (numeric) with `brand` (string/name) in the PostgreSQL snapshot table.
+- **Why:** To align with BigQuery source availability and simplify reporting dims.
+- **Impact on modules:** `i2o-scheduler` aggregation task updated to extract `brand`; `i2o-reseller` API filters updated to use `brand` strings.
+- **ADR:** [ADR 24-03-2026](ADR/adr-24-03-2026.MD)
+
+#### 2026-03-13: PostgreSQL Migration Update
 - **What changed:** Moved `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` from BigQuery sink tables to PostgreSQL tables.
 - **Why:** Release instruction requires both tables to be in PostgreSQL with `org_id` for tenant-scoped storage and auditability.
 - **Impact on modules:** `i2o-scheduler` now writes snapshot + audit rows to PostgreSQL; `i2o-reseller` reads dashboard KPI rows from PostgreSQL; BigQuery remains source-only for raw KPI extraction.
 - **Impact on APIs:** `POST /widget/getCardData` and `POST /report/getGridCardData` remain unchanged at contract level.
-- **Impact on operations/tests:** Runbook, DDL, timeout handling, and integration testing updated for PostgreSQL persistence path.
 - **ADR:** [ADR 13-03-2026](ADR/adr-13-03-2026.MD)
 
 ---
@@ -131,34 +147,25 @@ This document describes the technical architecture for the **Marketplace Overvie
 src/app/modules/marketplace-overview/
 ├── marketplace-overview.module.ts           # Feature module (lazy-loaded)
 ├── marketplace-overview-routing.module.ts   # Route: /brand-protector/benefits/marketplace-overview
+├── marketplace-overview.constants.ts       # Module-specific constants (brand codes, KPI labels)
 ├── components/
 │   ├── marketplace-overview-page/          # Parent page component
 │   │   ├── marketplace-overview-page.component.ts
 │   │   ├── marketplace-overview-page.component.html
 │   │   └── marketplace-overview-page.component.scss
 │   ├── filter-bar/                         # Brand, Region, Calendar, View Toggle
-│   │   ├── filter-bar.component.ts
-│   │   ├── filter-bar.component.html
-│   │   └── filter-bar.component.scss
-│   ├── marketplace-card/                   # Card view — single marketplace card
-│   │   ├── marketplace-card.component.ts
-│   │   ├── marketplace-card.component.html
-│   │   └── marketplace-card.component.scss
-│   ├── marketplace-card-list/              # Card view — list wrapper
-│   │   └── ...
-│   ├── marketplace-table/                  # Table view — AG Grid table
+...
+│   ├── marketplace-table/                  # Table view — AG Grid Enterprise table
 │   │   ├── marketplace-table.component.ts
 │   │   ├── marketplace-table.component.html
 │   │   └── marketplace-table.component.scss
 │   └── initiate-trial-dialog/             # Confirmation dialog for trial request
 │       └── ...
 ├── services/
-│   ├── marketplace-overview-api.service.ts     # HTTP calls to i2o-reseller backend
+├── services/
+│   ├── marketplace-overview-api.service.ts     # HTTP calls to i2o-reseller (via rest-api.service.ts)
 │   └── marketplace-overview-state.service.ts  # RxJS BehaviorSubject state management
-└── models/
-    ├── marketplace-kpi.model.ts                # Interfaces for KPI data
-    ├── marketplace-filter.model.ts             # Filter state types
-    └── marketplace-activation.model.ts         # Marketplace activation config
+... (rest of the specific models)
 ```
 
 ### 5.2 Backend — i2o-reseller API Strategy
@@ -233,7 +240,7 @@ Browser                  i2o-reseller                             PostgreSQL
   │   filters: { brand_id, region, start_date, end_date } }            │
   │──────────────────────────>│                                        │
   │                           │── SQL: SELECT * FROM marketplace_kpi_weekly_snapshot
-  │                           │    WHERE org_id=:token_org_id AND brand_id=?       │
+  │                           │    WHERE org_id=:token_org_id AND brand=?       │
   │                           │      AND region=? AND week_start=?                  │
   │                           │───────────────────────────────────────>│
   │                           │<── KPI rows per marketplace ───────────│
@@ -296,7 +303,7 @@ i2o-scheduler                 BigQuery sources                    PostgreSQL sin
   │                                                                    │
   │───────────────────────────────────────────────────────────────────>>│
   │ UPSERT marketplace_kpi_weekly_snapshot                             │
-  │ (org_id, week_start, marketplace, brand_id, region, KPI columns)  │
+  │ (org_id, week_start, marketplace, brand, region, KPI columns)  │
   │<<───────────────────────────────────────────────────────────────────│
   │                                                                    │
   │───────────────────────────────────────────────────────────────────>>│
@@ -333,7 +340,7 @@ CREATE TABLE IF NOT EXISTS marketplace_kpi_weekly_snapshot (
   week_start            DATE NOT NULL,
   week_end              DATE NOT NULL,
   marketplace           VARCHAR(32) NOT NULL,   -- AMAZON | WALMART | EBAY | TARGET
-  brand_id              BIGINT NOT NULL,
+  brand                 VARCHAR(255) NOT NULL,
   region                VARCHAR(32) NOT NULL,   -- US | UK | DE | etc.
   -- Analytics KPIs (from viz_lost_sales + reseller_progress_by_week + listings_progress_by_week)
   lost_sales            NUMERIC(18,2),
@@ -357,12 +364,12 @@ CREATE TABLE IF NOT EXISTS marketplace_kpi_weekly_snapshot (
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT uq_marketplace_kpi_snapshot
-    UNIQUE (org_id, week_start, marketplace, brand_id, region)
+    UNIQUE (org_id, week_start, marketplace, brand, region)
 );
 
 CREATE INDEX IF NOT EXISTS idx_marketplace_kpi_snapshot_lookup
-  ON marketplace_kpi_weekly_snapshot (org_id, brand_id, region, week_start DESC);
--- Primary access pattern: WHERE org_id=? AND brand_id=? AND region=? AND week_start=?
+  ON marketplace_kpi_weekly_snapshot (org_id, brand, region, week_start DESC);
+-- Primary access pattern: WHERE org_id=? AND brand=? AND region=? AND week_start=?
 -- Cross-tenant isolation: org_id is extracted from the Keycloak Bearer token at request time and injected into every PostgreSQL query by i2o-reseller. It is never trusted from the client request payload.
 ```
 
@@ -545,7 +552,7 @@ Add to `app-routing.module.ts`:
   path: 'brand-protector/benefits/marketplace-overview',
   loadChildren: () => import('./modules/marketplace-overview/marketplace-overview.module')
     .then(m => m.MarketplaceOverviewModule),
-  canActivate: [KeycloakAuthGuard, RoleBasedAuthGuard],
+  canActivate: [KeycloakAuthenticationGuard, RolesBasedAuthGuard],
   data: { roles: ['brand-protector'] }
 }
 ```
@@ -577,9 +584,9 @@ export class MarketplaceOverviewStateService {
 MarketplaceOverviewPageComponent
   │
   ├── FilterBarComponent
-  │     ├── Brand multi-select (PrimeNG Dropdown)
-  │     ├── Region dropdown (PrimeNG Dropdown)
-  │     ├── Calendar (PrimeNG Calendar, week mode)
+  │     ├── Brand multi-select (Common app-multi-select-autocomplete via CoreModule)
+  │     ├── Region dropdown (Common app-multi-select-autocomplete via CoreModule)
+  │     ├── Calendar (Common date-picker/schedule-report-modal via CoreModule)
   │     └── View toggle (Card | Table)    → emits filterChange event
   │
   ├── [*ngIf="viewMode === 'card'"]
@@ -592,7 +599,7 @@ MarketplaceOverviewPageComponent
   │               InitiateTrialButtonComponent
   │
   └── [*ngIf="viewMode === 'table'"]
-      MarketplaceTableComponent (AG Grid Community)
+      MarketplaceTableComponent (Common data-grid via CoreModule)
         ├── Column: Marketplace (logo + name)
         ├── Columns: KPI values (10 total)
         └── Column: Status (badge | Initiate Trial button)
@@ -631,7 +638,7 @@ const DEFAULT_FILTER: MarketplaceFilter = {
 | Brand/region metadata | i2o-master-data | Read | For filter dropdowns |
 | Email sending | i2o-email-service | REST call | SendGrid delivery |
 | Weekly cron | i2o-scheduler | Internal task | Aggregation job |
-| Auth | Keycloak | Token injection | Existing interceptor |
+| UI Components | CoreModule | Internal Import | Reusable filters and grid components imported specifically from `src/app/modules/common/` |
 
 ### 10.2 Error Handling Strategy
 
@@ -685,9 +692,8 @@ scheduler.marketplace-overview.cron=0 6 * * MON
 
 | Concern | Approach |
 |---------|---------|
-| Authentication | Keycloak Bearer token — existing `KeycloakBearerInterceptor` |
 | Authorization | `RoleBasedAuthGuard` — `brand-protector` role required |
-| Data isolation | `org_id` extracted from Keycloak token at request time; injected into all PostgreSQL reads/writes as mandatory `WHERE org_id=?` / `VALUES (:org_id)` clauses. `org_id` is never accepted from client request payload. Snapshot uniqueness is enforced by `(org_id, week_start, marketplace, brand_id, region)` (Section 7.2). Cross-tenant integration tests are required (Section 14.2). |
+| Data isolation | `org_id` extracted from Keycloak token at request time; injected into all PostgreSQL reads/writes as mandatory `WHERE org_id=?` / `VALUES (:org_id)` clauses. `org_id` is never accepted from client request payload. Snapshot uniqueness is enforced by `(org_id, week_start, marketplace, brand, region)` (Section 7.2). Cross-tenant integration tests are required (Section 14.2). |
 | API validation | Spring `@Valid` on all request DTOs; reject unknown fields |
 | Email injection prevention | `brandName` derived server-side from `i2o-master-data` using `brandId`; user-supplied strings are never interpolated directly into email subject/body |
 | Rate limiting | Initiate Trial endpoint: 1 request per marketplace per brand per hour (server-side check against PostgreSQL) |
@@ -723,6 +729,8 @@ scheduler.marketplace-overview.cron=0 6 * * MON
 - **Cross-tenant isolation test (required — AR-001):** Create two orgs (`org_A`, `org_B`). Insert snapshot rows for `org_A`. Assert that queries scoped to `org_B` return zero rows. Assert that `org_id` is never derived from the request payload.
 
 ### 14.3 E2E Test Scenarios (User Stories → AC)
+
+Uses **Protractor** and **Playwright (^1.58.x)** for functional validation. Playwright ensures modern test stability with video/trace capture for fail-state remediation.
 
 | Story | Scenario | AC |
 |-------|---------|-----|
@@ -760,6 +768,10 @@ scheduler.marketplace-overview.cron=0 6 * * MON
 > **Updated 2026-03-04:** BigQuery source table names confirmed from `query_described.csv`. API strategy confirmed: reuse existing `getCardData` and `getGridCardData` only. `org_id` tenant isolation gaps (AR-001) resolved. Table name corrected to `org_market_mapping`.
 >
 > **Updated 2026-03-13:** Storage decision updated for release_8. `marketplace_kpi_weekly_snapshot` and `marketplace_scheduler_audit_log` are now PostgreSQL tables keyed by `org_id`. See [ADR 13-03-2026](ADR/adr-13-03-2026.MD).
+>
+> **Updated 2026-03-20:** Frontend alignment update per March 2026 standards. Framework versions, AG Grid Enterprise 21.1.1, and Playwright integration formalized. See [ADR 20-03-2026](ADR/adr-20-03-2026.MD).
+>
+> **Updated 2026-03-24:** Brand name replacement update. `brand_id` removed in favor of `brand` string column in PostgreSQL snapshot table to align with BigQuery source logic. See [ADR 24-03-2026](ADR/adr-24-03-2026.MD).
 
 **Overall Confidence Score: 8/10** — Architecture is conditionally implementation-ready. The component `componentId` registration (Open Item #2) is a **hard go/no-go gate** before frontend integration begins. All other changes are implementable.
 

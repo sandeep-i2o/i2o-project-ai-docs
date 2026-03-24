@@ -53,7 +53,7 @@ public ResponseEntity<MarketplaceConfigResponse> getConfig() {
 
 ```json
 {
-  "brands": [{ "id": "brand_001", "name": "Nike" }],
+  "brands": ["Nike", "Adidas", "Puma"],
   "regions": ["US", "UK"],
   "defaultWeekStart": "2026-02-24",
   "defaultWeekEnd": "2026-03-02",

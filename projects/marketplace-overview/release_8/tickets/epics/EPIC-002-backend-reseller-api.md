@@ -65,7 +65,7 @@ This epic covers all changes inside `i2o-reseller`:
 1. `GET /marketplace-overview/config` returns brands, regions, week defaults, and activation status per marketplace for the authenticated org.
 2. `POST /marketplace-overview/initiate-trial` triggers an email to `support@i2oretail.com` with the correct brand and marketplace.
 3. `org_id` is never accepted from the client payload — always extracted from the Keycloak Bearer token.
-4. `brandName` is derived server-side from `i2o-master-data` using `brandId` — preventing email injection.
+4. `brand` name is validated server-side against `i2o-master-data` — preventing email injection.
 5. Rate limit of 1 trial request per marketplace per brand per hour is enforced server-side.
 6. Unit tests pass with ≥ 80% service coverage.
 7. Cross-tenant isolation integration test passes (org_A data not visible to org_B queries).
