@@ -1,0 +1,4 @@
+interface:
+  display_name: "Remediate Ticket Review"
+  short_description: "Apply review findings to epic/story backlog"
+  default_prompt: "Use $remediate-ticket-review-findings to apply review findings to tickets, produce a remediation completion summary, and update progress.md."

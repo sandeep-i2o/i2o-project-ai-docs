@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Remediation"
+  short_description: "Repair architecture from review findings"
+  default_prompt: "Use $architecture-review-remediation to apply architecture-review findings to architecture.md, generate architecture-remediation.md, and report unresolved blockers."

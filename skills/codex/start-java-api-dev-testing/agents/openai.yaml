@@ -1,0 +1,4 @@
+interface:
+  display_name: "Start Java API Dev Testing"
+  short_description: "Build, run, and curl test Java APIs in dev flow"
+  default_prompt: "Use $start-java-api-dev-testing to build, run, and verify Java API endpoints with configurable curl payloads."

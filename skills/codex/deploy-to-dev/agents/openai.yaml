@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy to Dev"
+  short_description: "Deploy current branch to Jenkins dev and wait for result"
+  default_prompt: "Deploy the current Git branch to the Jenkins dev job and report concise status"

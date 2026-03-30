@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Architecture"
+  short_description: "Brutal PRD/PID architecture audit"
+  default_prompt: "Review architecture against PRD and PID, identify feasibility gaps, and produce an approval-ready architecture-review.md report."

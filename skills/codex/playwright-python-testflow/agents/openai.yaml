@@ -1,0 +1,4 @@
+interface:
+  display_name: "Playwright Python QA"
+  short_description: "Generate, review, run Playwright Python tests from branch deltas"
+  default_prompt: "Generate executable Playwright tests from branch changes, PRD, and ticket stories, get approval, run tests, report results, and update progress.md"

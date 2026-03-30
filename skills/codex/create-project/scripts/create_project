@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""Create project/release docs folder scaffold in i2o-project-ai-docs."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+EXPECTED_REPO_SLUG = "sandeep-i2o/i2o-project-ai-docs"
+
+
+def run_git(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def ensure_repo_root(cwd: Path) -> None:
+    try:
+        top_level = Path(run_git(["rev-parse", "--show-toplevel"])).resolve()
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise SystemExit("Error: run this command inside a git repository.") from exc
+
+    if cwd.resolve() != top_level:
+        raise SystemExit(
+            f"Error: run from repo root.\nExpected: {top_level}\nCurrent:  {cwd.resolve()}"
+        )
+
+    remote_url = run_git(["remote", "get-url", "origin"])
+    if EXPECTED_REPO_SLUG not in remote_url:
+        raise SystemExit(
+            "Error: this repository is not the expected origin "
+            f"({EXPECTED_REPO_SLUG}). Found: {remote_url}"
+        )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="create_project",
+        description="Create project docs folders under projects/<project>/<release>/docs.",
+    )
+    parser.add_argument("--project_name", required=True, help="Project folder name.")
+    parser.add_argument(
+        "--release",
+        default="latest",
+        help='Release folder name (default: "latest").',
+    )
+    return parser.parse_args()
+
+
+def create_structure(project_name: str, release: str, repo_root: Path) -> Path:
+    base = repo_root / "projects" / project_name / release / "docs"
+    for folder in ("design", "requirements", "tests"):
+        (base / folder).mkdir(parents=True, exist_ok=True)
+    return base
+
+
+def main() -> int:
+    args = parse_args()
+    project_name = args.project_name.strip()
+    release = args.release.strip() or "latest"
+
+    if not project_name:
+        raise SystemExit("Error: --project_name cannot be empty.")
+
+    cwd = Path(os.getcwd())
+    ensure_repo_root(cwd)
+
+    docs_path = create_structure(project_name, release, cwd)
+    print("Created/verified:")
+    print(f"- {docs_path}")
+    print(f"- {docs_path / 'design'}")
+    print(f"- {docs_path / 'requirements'}")
+    print(f"- {docs_path / 'tests'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

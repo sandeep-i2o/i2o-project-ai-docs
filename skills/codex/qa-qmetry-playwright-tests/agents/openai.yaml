@@ -1,0 +1,4 @@
+interface:
+  display_name: "QA QMetry Playwright"
+  short_description: "QMetry-driven Playwright with saved test credentials"
+  default_prompt: "Create frontend Playwright tests from QMetry cases, capture and reuse test credentials from .config/credentials.json, require approval, execute approved tests, and generate a report"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Generated Epics"
+  short_description: "Audit PRD-architecture-ticket alignment gaps"
+  default_prompt: "Use $review-generated-epics to review generated epics and stories for PRD and architecture alignment, and produce review-tickets.md with gaps and ambiguities."

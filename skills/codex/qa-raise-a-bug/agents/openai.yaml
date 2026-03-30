@@ -1,0 +1,4 @@
+interface:
+  display_name: "QA Raise Bug"
+  short_description: "Create Jira bugs from QMetry failures"
+  default_prompt: "Raise Jira bug tickets from QMetry test case comments after user review"

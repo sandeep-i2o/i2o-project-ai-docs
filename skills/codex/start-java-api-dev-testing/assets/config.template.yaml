@@ -1,0 +1,18 @@
+app:
+  base_url: "http://localhost:8080"
+  startup_wait_seconds: 120
+  ready_path: ""
+  ready_expected_status: 200
+
+tests:
+  - name: "POST /example"
+    enabled: false
+    method: "POST"
+    endpoint: "/example"
+    expected_status: 200
+    headers:
+      Content-Type: "application/json"
+    payload: |
+      {
+        "replace": "me"
+      }

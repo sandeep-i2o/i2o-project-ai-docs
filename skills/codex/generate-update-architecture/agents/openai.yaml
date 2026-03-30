@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate/Update Architecture"
+  short_description: "Generate or update architecture docs with ADR logs"
+  default_prompt: "Generate or update architecture.md from PRD and project knowledge, including ADR creation for updates"

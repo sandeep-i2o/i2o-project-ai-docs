@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Project"
+  short_description: "Create project/release docs folders"
+  default_prompt: "Use $create-project to create projects/<project_name>/<release>/docs with design, requirements, and tests subfolders."

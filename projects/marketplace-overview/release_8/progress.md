@@ -1,5 +1,25 @@
 # Progress Tracker — marketplace-overview / release_8
 
+## Checkpoint — 2026-03-30: Fix IAC-130 (Calendar/View Defaults & Visibility)
+
+### Request Implemented
+- Fixed visibility issue for Filter Bar by adding missing `data-testid` and `aria-label` locators.
+- Updated default calendar selection to **Last Week (Sunday to Saturday)**.
+- Ensured `week_start` (Sunday) is passed as a filter to backend APIs.
+- Updated E2E Playwright test expectations (IAC-TC-37) to match Sun-Sat default.
+
+### Workflow Checkpoints (implement-issue)
+| Step | Status |
+|------|--------|
+| 1. Fetch Context | ✅ Complete |
+| 2. Branch Strategy | ✅ Complete (`feature/issue-IAC-130-fix-visibility`) |
+| 3. Architecture Verification | ✅ Complete (Aligned with Section 9.3) |
+| 4. Implementation | ✅ Complete (ID/Aria additions + State logic) |
+| 5. Testing Loop | 📝 In Progress (Playwright TC-37 verification) |
+| 6. Quality Gates | ⏳ Pending |
+| 7. Commit/Push | ✅ Complete (`514aa67c0`) |
+| 8. Status Update | ⏳ Pending |
+
 ## Checkpoint — 2026-03-24: Brand Name Replacement & ADR Update
 
 ### Request Implemented
@@ -7,25 +27,26 @@
 - Source brand data from BigQuery for weekly aggregation.
 - Updating architecture document with new ADR.
 
-### Workflow Checkpoints (generate-epics)
+### Workflow Checkpoints (implement-issue)
 | Step | Status |
 |------|--------|
-| 1. Preflight | ✅ Complete |
-| 2. Architecture Discovery | ✅ Complete |
-| 3. Two-Agent Analysis | ✅ Complete |
-| 4. Project Detection | ✅ Complete |
-| 5. Action: Update | ✅ Complete |
-| 6. Progress Tracking | ✅ Complete |
+| 1. Fetch Context | ✅ Complete |
+| 2. Branch Strategy | ✅ Complete |
+| 3. Architecture Verification | ✅ Complete |
+| 4. Implementation | ✅ Complete (Scheduler Task & Schema) |
+| 5. Testing Loop | ✅ Complete (5/5 tests pass) |
+| 6. Quality Gates | ✅ Complete (mvn compile pass) |
+| 7. Commit/Push | 📝 In Progress |
+| 8. Status Update | ❌ Pending |
 
-### Tickets Updated (Local)
-- **EPIC-002**: Updated to reflect `brand` string validation.
-- **EPIC-003**: Updated to use `brand` (VARCHAR) in snapshot sink.
-- **STORY-001**: Updated models to use `brands: string[]` instead of `brandIds: string[]`.
-- **STORY-004**: Updated API filter payload.
-- **STORY-007**: Updated config response contract.
-- **STORY-008**: Updated trial endpoint to use `brand` name.
-- **STORY-009**: Updated PostgreSQL DDL (`brand_id` -> `brand`).
-- **STORY-010**: Updated aggregation logic and lifecycle.
+### Implementation Details (IAC-116)
+- **Module:** `i2o-scheduler`
+- **Branch:** `feature/issue-IAC-116-scheduler-aggregation`
+- **Files Modified:**
+  - `MarketplaceOverviewWeeklyAggregationTask.java`: Updated to use `brand` strings.
+  - `postgres_schema_epic003.sql`: Replaced `brand_id` with `brand` VARCHAR(255).
+  - `bq_schema_epic003.sql`: Updated for consistency.
+  - `MarketplaceOverviewWeeklyAggregationTaskTest.java`: Updated mocks/assertions.
 
 
 ## Checkpoint — 2026-03-20: Data-Grid Alignment & Jira Push
