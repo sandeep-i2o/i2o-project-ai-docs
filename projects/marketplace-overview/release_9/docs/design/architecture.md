@@ -53,6 +53,8 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2026-04-06 | v1.8 | Captured review-resolution decisions: placeholder-only unsubscribed metrics accepted for release_9, WBR canonical artifact set to published PPT URL, outbox retry executor assigned to `i2o-scheduler`, PID marked not applicable | Sandeep |
+| 2026-04-06 | v1.7 | Defined authoritative unsubscribed-marketplace validation source for pilot/audit as `org_market_mapping.enabled = false` | Sandeep |
 | 2026-04-06 | v1.6 | Removed canonical/backend metrics path for unsubscribed marketplaces; UI now renders `##` placeholders only with no API/backend logic | Sandeep |
 | 2026-04-06 | v1.5 | Defined canonical WBR metadata lookup through `schedule_wbr_details` + `sw.gcs_location` JSON for latest date and download target | Sandeep |
 | 2026-04-06 | v1.4 | Reverted active subscription sourcing to legacy `org_market_mapping` API path; brands from `brand_master`; enforcement accounts from `account` + `account_brand`; `ui_config` retained only for screen enablement | Sandeep |
@@ -105,12 +107,26 @@ This document describes the technical architecture for the **Marketplace Overvie
 - No backend aggregation, pain-level derivation, cache table, or marketplace-metrics parser logic is part of release_9 scope.
 - ADR link: `docs/design/ADR/adr-06-04-2026-04.MD` (see Section 15).
 
+### Change Notes (v1.7)
+
+- Authoritative source for validating "known unsubscribed marketplace" is `org_market_mapping` where `enabled = false` for the org.
+- `start-pilot` and `request-audit` validation rules now explicitly use this mapping source.
+- Schema evidence verified from `knowledge/pg_schema/app_db_schema.csv`:
+  - `org_market_mapping.enabled` exists as `bool`.
+
+### Change Notes (v1.8)
+
+- Product decision confirmed for release_9: unsubscribed marketplace metrics remain placeholder-only (`##`) with no backend/API metric sourcing.
+- Canonical WBR artifact for release_9 is the published `PPT url` parsed from `schedule_wbr_details.gcs_location` JSON.
+- `marketplace_email_outbox` retry execution ownership is assigned to `i2o-scheduler` via scheduled retry job.
+- PID is marked **Not Applicable** for release_9 by Product direction (recorded 2026-04-06).
+
 ### 1.5 Source Artifacts and Traceability Scope
 
 | Artifact | Path | Status | Decision |
 |----------|------|--------|----------|
 | PRD | `projects/marketplace-overview/release_9/docs/requirements/prd.md` | Available | Authoritative product source for release_9 implementation scope |
-| PID | Not found under `projects/marketplace-overview/release_9/docs` as of 2026-04-04 | Pending product decision | Before implementation approval, Product Owner must either provide PID path or explicitly sign off "PID not applicable for release_9" in this document's approval log |
+| PID | Not present under `projects/marketplace-overview/release_9/docs` | Not applicable | Product direction (2026-04-06): PID is not applicable for release_9; no PID artifact is required for implementation approval |
 
 ---
 
@@ -418,6 +434,17 @@ Browser                  i2o-reseller                   PostgreSQL     i2o-email
   │──────────────────────────>│                             │                │                │
   │                           │── Extract user name/email   │                │                │
   │                           │   from Keycloak token       │                │                │
+  │                           │                             │                │                │
+  │                           │── SELECT omm.marketplace_id,│                │                │
+  │                           │   m.platform, m.region      │                │                │
+  │                           │   FROM org_market_mapping omm│               │                │
+  │                           │   JOIN marketplace m ON      │                │                │
+  │                           │   omm.marketplace_id=m.marketplace_id        │                │
+  │                           │   WHERE omm.org_id=? AND     │                │                │
+  │                           │   COALESCE(omm.enabled,false)=false ───────>│                │
+  │                           │<── allowed unsubscribed set  │                │                │
+  │                           │   IF request marketplace/region not in set:  │                │
+  │                           │   return 400 validation error │               │                │
   │                           │                             │                │                │
   │                           │── SELECT 1 FROM             │                │                │
   │                           │   marketplace_pilot_requests│                │                │
@@ -971,6 +998,17 @@ Triggers a free pilot request email to support team. Tracks request to prevent d
 
 > Note: `brands` is an array of brand names selected in the filter at time of click. `userName` and `userEmail` are extracted from the Keycloak token — not from the request payload.
 
+**Authoritative unsubscribed-marketplace validation query (from `org_market_mapping.enabled = false`):**
+```sql
+SELECT omm.org_id, omm.marketplace_id, m.platform, m.region
+FROM org_market_mapping omm
+JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
+WHERE omm.org_id = :org_id
+  AND COALESCE(omm.enabled, false) = false;
+```
+
+`marketplace` + `region` in the request must match one row from this result set before request acceptance.
+
 **Response (200 OK):**
 ```json
 {
@@ -1226,6 +1264,7 @@ All environment-specific values stored in `application_properties` table:
 | `marketplace_overview` | `signed_url_expiry_minutes` | Signed URL expiry (default: 15) |
 | `marketplace_overview` | `email_retry_max_attempts` | Max retries for transport/5xx email failures (default: 6) |
 | `marketplace_overview` | `email_retry_backoff_minutes` | Comma-separated backoff schedule (default: `1,5,15,30,60,120`) |
+| `marketplace_overview` | `email_retry_scheduler_cron` | Cron for `i2o-scheduler` outbox retry job (default: `0 */1 * * * *`, every minute) |
 
 ### 10.4 Database Migration
 
@@ -1245,11 +1284,11 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | Dependency | Story Impact | Owner | Due Date | Go/No-Go | Fallback Plan |
 |------------|--------------|-------|----------|----------|---------------|
 | GCP bucket names/paths for WBR and audit sample | US004, US007 | Data Team | 2026-04-11 | Open | Dev/staging use mock buckets only; production deployment blocked |
-| Canonical source decision for unsubscribed marketplace metrics (post-release scope) | US002, US003 | Product + Data Team | 2026-04-18 | Open | release_9 uses frontend placeholders (`##`); no backend/API dependency |
+| Canonical source decision for unsubscribed marketplace metrics (release_9 scope) | US002, US003 | Product + Data Team | 2026-04-06 | Closed | Product confirmed placeholder-only unsubscribed metrics for release_9 (`##` in UI only); canonical metrics source remains post-release backlog |
 | Legacy marketplace-region mapping API contract (`org_market_mapping` + `marketplace`) signed off for active subscriptions | US001 | Backend Lead | 2026-04-12 | Open | Dev/staging can use fallback mock mapping payload; production blocked until contract validation |
 | `ui_config` screen-enablement contract signed off (property codes `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`) | US009 | Backend Lead | 2026-04-12 | Open | Dev/staging can use seeded `ui_config` rows; production blocked until contract validation |
 | Support email trigger path validated end-to-end (`i2o-reseller` -> `i2o-email-service` -> SendGrid) | US005, US006 | Platform + Support Ops | 2026-04-12 | Open | Use non-prod alias in dev/staging; production blocked until successful smoke test |
-| PID disposition captured (PID path provided OR Product sign-off "not applicable") | Governance / release approval | Product Owner | 2026-04-10 | Open | Architecture remains `Not Approved` until disposition is recorded |
+| PID disposition captured (PID path provided OR Product sign-off "not applicable") | Governance / release approval | Product Owner | 2026-04-06 | Closed | Product confirmed PID is not applicable for release_9 |
 
 **Promotion rule:** CI/CD promotion job checks a release checklist artifact. If any row is not `Closed`, deployment to production is rejected.
 
@@ -1292,8 +1331,8 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 
 | Endpoint | Validation Rules |
 |---------|-----------------|
-| `start-pilot` | `marketplace` must be a known unsubscribed marketplace for the org; `brands` must exist in `brand_master` for org; `region` must be 'US'; Keycloak token must include `email` and display name claims |
-| `request-audit` | Same as start-pilot (except duplicate request is allowed) |
+| `start-pilot` | `marketplace` must resolve from `org_market_mapping` where `org_id = token.org_id` and `COALESCE(enabled,false)=false`; `brands` must exist in `brand_master` for org; `region` must be 'US'; Keycloak token must include `email` and display name claims |
+| `request-audit` | Same marketplace validation source as `start-pilot` (`org_market_mapping.enabled=false`), except duplicate request is allowed |
 | `wbr/download` | No input — org-scoped via token |
 | `audit-sample` | No input — static resource |
 
@@ -1315,8 +1354,8 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | Failure Class | Detection Point | API Behavior | UI Behavior | Server Action |
 |---------------|-----------------|--------------|-------------|---------------|
 | Validation or auth identity failure (`brands` empty, marketplace invalid, token missing email) | Before calling `i2o-email-service` | Return `400`/`401` with actionable message | Show error toast/modal; do not disable pilot button | No outbox write |
-| Sync transport failure (`timeout`, DNS/connectivity) or `5xx` from `i2o-email-service` | During synchronous send call | Return `202 Accepted` with confirmation message | Show success confirmation | Persist payload to `marketplace_email_outbox` with retry schedule |
-| Async delivery failure (SendGrid reject/bounce from webhook) | After initial accepted response | No retroactive API error to user | No UI rollback | Move outbox record to `RETRYING`; retry until `email_retry_max_attempts`; alert Support Ops on terminal `FAILED` |
+| Sync transport failure (`timeout`, DNS/connectivity) or `5xx` from `i2o-email-service` | During synchronous send call | Return `202 Accepted` with confirmation message | Show success confirmation | Persist payload to `marketplace_email_outbox`; `i2o-scheduler` job `MarketplaceOverviewEmailRetryJob` retries rows with `status IN ('PENDING','RETRYING')` and `next_retry_at <= NOW()` |
+| Async delivery failure (SendGrid reject/bounce from webhook) | After initial accepted response | No retroactive API error to user | No UI rollback | Move outbox record to `RETRYING`; `MarketplaceOverviewEmailRetryJob` applies configured backoff until `email_retry_max_attempts`; alert Support Ops on terminal `FAILED` |
 | Duplicate pilot request | `marketplace_pilot_requests` unique constraint | Return `409` | Keep button disabled with tooltip "Free pilot requested" | No email send |
 | Duplicate audit request | Request dedupe check in `MarketplaceAuditService` | Return `200` | Show success confirmation | Send email with `[DUPLICATE]` subject prefix |
 
@@ -1449,7 +1488,7 @@ Unsubscribed metrics use text placeholders (`##`) and "Data pending" labels, so 
 
 | Risk/Debt | Impact | Mitigation Strategy |
 |-----------|--------|---------------------|
-| PID artifact missing or unconfirmed as N/A | **HIGH** — Architecture sign-off may be blocked by governance gap | Product Owner must provide PID path or sign-off "PID not applicable" before implementation approval (Sections 1.5, 10.5, 17). |
+| PRD-architecture delta for unsubscribed metrics and WBR artifact format | **MEDIUM** — Review/readiness discussions can drift until PRD text is updated | Update PRD revision to explicitly record release_9 decisions: placeholder-only unsubscribed metrics and published PPT URL for WBR. |
 | GCP bucket URLs not yet confirmed by data team | **HIGH** — Blocks WBR download and audit sample | Use mock data for dev/staging. Bucket URLs must be resolved by end of Week 1. Config stored in `application_properties` for easy update. |
 | Canonical unsubscribed metrics source missing | **MEDIUM** — Right-column metrics remain placeholders (`##`) | Explicitly document placeholder behavior in release_9. Track canonical source as follow-up dependency (Section 10.5). |
 | `ui_config` property code drift across environments | **MEDIUM** — Navigation links may render incorrectly if expected property keys are missing/renamed | Add startup validation in `i2o-reseller` for required screen keys and include integration tests seeded with `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`. |
@@ -1500,8 +1539,7 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 The architecture is ready for implementation when:
 1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths for WBR/audit, canonical metrics-source decision, legacy mapping API contract, `ui_config` screen-enablement contract, and email trigger readiness)
 2. `account` + `account_brand` schema columns are confirmed (Open Item #2)
-3. Product Owner records PID disposition (PID path or explicit "PID not applicable for release_9")
-4. KPI dashboard in Section 12.5 is created in staging with validated event flow for PRD B4 metrics
+3. KPI dashboard in Section 12.5 is created in staging with validated event flow for PRD B4 metrics
 
 **Implementation order (suggested):**
 1. **Week 1–2:** US001 (Active Subscriptions) + US003 (Filters) + US002 (Unsubscribed Marketplaces UI placeholders) — core screen with both columns
@@ -1531,4 +1569,4 @@ Validation mode: Comprehensive (full-stack sections evaluated)
 
 **Checklist remediation summary**
 - No critical checklist failures remain after the v1.6 update.
-- Residual governance dependency: PID disposition is still open and tracked as a release gate (Sections 1.5, 10.5, 14, 17).
+- PID governance dependency is closed: Product marked PID not applicable for release_9 (Sections 1.5, 10.5, 17).
