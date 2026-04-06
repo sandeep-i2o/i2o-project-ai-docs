@@ -1,5 +1,5 @@
 # Architecture Document — Marketplace Overview (Client-Facing Redesign)
-**Project:** BP-MO-001 | **Release:** release_9 | **Date:** 2026-04-04
+**Project:** BP-MO-001 | **Release:** release_9 | **Date:** 2026-04-06
 **Status:** Draft
 
 ---
@@ -53,8 +53,18 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2026-04-06 | v1.2 | Replaced subscription-type-based navigation enablement with `ui_config`-based screen enablement query wrapped in `/marketplace-overview/config` | Sandeep |
 | 2026-04-04 | v1.1 | Remediation update for architecture-review findings AR-001 to AR-008 | Sandeep |
 | 2026-04-03 | v1.0 | Initial architecture for release_9 client-facing redesign | Sandeep |
+
+### Change Notes (v1.2)
+
+- Screen enablement now uses `i2oretail.ui_config` (`org_id` scoped) with property codes:
+  - `BrandProtector` (BP navigation gate)
+  - `BrandProtector.Enforcement_Center` (Enforcement screen link)
+  - `BrandProtector.BrandViolation.BrandViolations` (Brand Violations link)
+- `i2o-reseller` `GET /marketplace-overview/config` is the single API wrapper for this screen-enablement fetch logic.
+- ADR link: `docs/design/ADR/adr-06-04-2026.MD` (see Section 15).
 
 ### 1.5 Source Artifacts and Traceability Scope
 
@@ -113,7 +123,7 @@ This document describes the technical architecture for the **Marketplace Overvie
   ┌────▼──────────────────────────────────┐  ┌─────────────▼──────────────┐
   │ PostgreSQL (i2oretail DB)             │  │ Google Cloud Storage        │
   │ - org_market_mapping                  │  │ - Marketplace data bucket   │
-  │ - organization + subscription_type    │  │   (quarterly JSON/CSV)      │
+  │ - ui_config (screen enablement)       │  │   (quarterly JSON/CSV)      │
   │ - brand_master                        │  │ - WBR PDF bucket            │
   │ - org_marketplace_account             │  │   (weekly zip per client)   │
   │ - marketplace (reference)             │  │ - Audit sample PDF bucket   │
@@ -155,7 +165,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | Pain Level Calculation | Server-side in `i2o-reseller` based on `total_resellers` from GCP data | 0–50 = Low, 51–200 = Medium, 201+ = High; calculated at API response time |
 | Filter State | Frontend-only; no server-side persistence | Filters reset to defaults on page refresh (PRD requirement) |
 | Enforcement Account Popup | Frontend component; data loaded with subscription config | Popup renders from already-loaded config data — no additional API call |
-| Navigation Links | Frontend routing; conditional rendering based on `organization.org_subscription_type_id` | If subscription includes BP → show Brand Violations, Enforcement, and Analytics links. Subscription type determines link visibility (see Section 7.1 Subscription Type Mapping). |
+| Navigation Links | Frontend routing; conditional rendering based on `i2oretail.ui_config.property_cd` values for the org | `BrandProtector` controls BP navigation visibility; `BrandProtector.Enforcement_Center` controls Enforcement link; `BrandProtector.BrandViolation.BrandViolations` controls Brand Violations link (see Section 7.1). |
 | Multi-brand in Email | All selected brands from filter captured in email body | PRD US005/US006 specify all filter-selected brands are included |
 
 ### 4.2 Modules Involved
@@ -165,7 +175,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | `frontendapplication-i2oretail` | i2o-retail/frontendapplication-i2oretail | REWORK Angular module | Replace release_8 KPI dashboard with new two-column client-facing layout |
 | `i2o-reseller` | i2o-retail/i2o-reseller | NEW `marketplaceoverview` sub-package | New endpoints: config, unsubscribed data, WBR download, pilot, audit, audit sample |
 | `i2o-email-service` | i2o-retail/i2o-email-service | No change | Consumed as-is for pilot/audit emails |
-| `i2o-master-data` | i2o-retail/i2o-master-data | No schema change | Existing tables used: `org_market_mapping`, `brand_master`, `org_marketplace_account`, `organization` (subscription type), `subscription_type` |
+| `i2o-master-data` | i2o-retail/i2o-master-data | No schema change | Existing tables used: `org_market_mapping`, `brand_master`, `org_marketplace_account`, `ui_config` |
 
 ---
 
@@ -212,7 +222,7 @@ graph TB
 |------|---------------|
 | `marketplace-overview` (Angular module) | Client-facing UI: subscription cards, unsubscribed cards, filter bar, WBR, pilot/audit dialogs, navigation |
 | `MarketplaceOverviewController` (i2o-reseller) | REST API: config, unsubscribed data, WBR URL, pilot request, audit request, audit sample URL |
-| `MarketplaceOverviewConfigService` | Load subscription data, brands, enforcement accounts from PostgreSQL; resolve enabled modules from `organization.org_subscription_type_id` |
+| `MarketplaceOverviewConfigService` | Load subscription data, brands, enforcement accounts from PostgreSQL; resolve enabled screens from `ui_config.property_cd` |
 | `MarketplaceUnsubscribedDataService` | Read/cache unsubscribed marketplace data from GCS bucket |
 | `MarketplaceWbrService` | Generate signed GCS URL for WBR zip download |
 | `MarketplacePilotService` | Handle pilot request: validate, persist, trigger email |
@@ -338,15 +348,17 @@ Browser                  i2o-reseller                           PostgreSQL / GCS
   │                           │   WHERE oma.org_id = ? ──────────────>│
   │                           │<── enforcement accounts + linked brands│
   │                           │                                      │
-  │                           │── SELECT o.org_subscription_type_id,
-  │                           │     st.subscription_type_name
-  │                           │   FROM organization o
-  │                           │   JOIN subscription_type st
-  │                           │     ON o.org_subscription_type_id = st.subscription_id
-  │                           │   WHERE o.org_id = ? ────────────────>│
-  │                           │<── subscription type (e.g. "GA+BP") ──│
-  │                           │   → Derive enabled modules:
-  │                           │     BP → Brand Violations + Enforcement + Analytics
+  │                           │── SELECT x.*
+  │                           │   FROM i2oretail.ui_config x
+  │                           │   WHERE x.org_id = ?
+  │                           │     AND x.property_cd IN (
+  │                           │       'BrandProtector',
+  │                           │       'BrandProtector.Enforcement_Center',
+  │                           │       'BrandProtector.BrandViolation.BrandViolations'
+  │                           │     )
+  │                           │   ORDER BY x.property_cd ─────────────>│
+  │                           │<── ui_config rows for enabled screens ─│
+  │                           │   → Resolve enabledModules flags        │
   │                           │                                      │
   │<── MarketplaceOverviewConfigResponse ────────────────────────────│
   │    { subscriptions[], brands[], enforcementAccounts[],           │
@@ -522,54 +534,51 @@ JOIN brand_master bm ON ab.brand_id = bm.id
 WHERE oma.org_id = :org_id;
 ```
 
-#### `organization` + `subscription_type` — Module Enablement via Subscription Type
-
-The navigation links on each subscription card are determined by `organization.org_subscription_type_id` joined with `subscription_type`.
+#### `ui_config` — Module/Screen Enablement
 
 ```sql
--- Existing tables (no change required)
--- Determines which navigation links to show based on subscription type
-SELECT o.org_id, o.org_subscription_type_id,
-       st.subscription_type_name
-FROM organization o
-JOIN subscription_type st ON o.org_subscription_type_id = st.subscription_id
-WHERE o.org_id = :org_id;
+-- Existing table (no schema change required)
+-- Determines which Brand Protector screens/navigation links are enabled
+SELECT x.*
+FROM i2oretail.ui_config x
+WHERE x.org_id = :org_id
+  AND x.property_cd IN (
+    'BrandProtector',
+    'BrandProtector.Enforcement_Center',
+    'BrandProtector.BrandViolation.BrandViolations'
+  )
+ORDER BY x.property_cd;
 ```
 
-**Subscription Type ID → Module Mapping:**
+**Property Code → Screen Mapping:**
 
-| ID | subscription_type_name | Analytics Link | Brand Violations Link | Enforcement Link |
-|----|----------------------|:-:|:-:|:-:|
-| 1 | GAE | Y | N | N |
-| 2 | GA | Y | N | N |
-| 3 | BP | Y | Y | Y |
-| 4 | DSM | N | N | N |
-| 5 | GA+BP | Y | Y | Y |
-| 6 | GA+DSM | Y | N | N |
-| 7 | GA+BP+DSM | Y | Y | Y |
-| 8 | BP+DSM | Y | Y | Y |
-| 9 | GAE+BP | Y | Y | Y |
-| 10 | GAE+DSM | Y | N | N |
-| 11 | GAE+BP+DSM | Y | Y | Y |
+| property_cd | UI Meaning | Analytics Link | Enforcement Link | Brand Violations Link |
+|-------------|------------|:-:|:-:|:-:|
+| `BrandProtector` | BP module access + screen navigation gate | Y | N | N |
+| `BrandProtector.Enforcement_Center` | Enforcement screen enablement | N | Y | N |
+| `BrandProtector.BrandViolation.BrandViolations` | Brand Violations screen enablement | N | N | Y |
 
 **Logic Summary:**
-- If subscription includes **BP** (IDs: 3, 5, 7, 8, 9, 11) → enable **all three links**: View analytics, View enforcement, Brand Violations
-- If subscription includes **GA** or **GAE** without BP (IDs: 1, 2, 6, 10) → enable **View analytics** only
-- If subscription is **DSM only** (ID: 4) → **no navigation links** shown
+- `BrandProtector` controls whether Marketplace Overview BP navigation and "View analytics" are visible.
+- `BrandProtector.Enforcement_Center` independently controls "View enforcement".
+- `BrandProtector.BrandViolation.BrandViolations` independently controls "Brand Violations".
+- If `BrandProtector` is absent, all three links are hidden for this module (defensive gate).
 
 **Implementation (backend service):**
 ```java
-public class SubscriptionModuleResolver {
-    private static final Set<Integer> BP_TYPES = Set.of(3, 5, 7, 8, 9, 11);
-    private static final Set<Integer> GA_TYPES = Set.of(1, 2, 5, 6, 7, 9, 10, 11);
+public class UiConfigScreenEnablementResolver {
+    private static final String BP = "BrandProtector";
+    private static final String ENFORCEMENT = "BrandProtector.Enforcement_Center";
+    private static final String BRAND_VIOLATIONS = "BrandProtector.BrandViolation.BrandViolations";
 
-    public EnabledModules resolve(int subscriptionTypeId) {
-        boolean hasBP = BP_TYPES.contains(subscriptionTypeId);
-        boolean hasGA = GA_TYPES.contains(subscriptionTypeId);
+    public EnabledModules resolve(Set<String> propertyCodes) {
+        boolean bpEnabled = propertyCodes.contains(BP);
+        boolean enforcementEnabled = bpEnabled && propertyCodes.contains(ENFORCEMENT);
+        boolean brandViolationsEnabled = bpEnabled && propertyCodes.contains(BRAND_VIOLATIONS);
         return new EnabledModules(
-            /* analytics */       hasGA || hasBP,
-            /* enforcement */     hasBP,
-            /* brandViolations */ hasBP
+            /* analytics */       bpEnabled,
+            /* enforcement */     enforcementEnabled,
+            /* brandViolations */ brandViolationsEnabled
         );
     }
 }
@@ -720,7 +729,7 @@ export interface ActiveSubscription {
   brands: BrandPill[];
   enforcementAccountCount: number;
   enforcementAccounts: EnforcementAccount[];
-  enabledModules: EnabledModules;   // derived from org subscription type; determines which nav links render
+  enabledModules: EnabledModules;   // derived from ui_config property_cd values; determines which nav links render
 }
 
 export interface BrandPill {
@@ -786,7 +795,20 @@ All endpoints are in `i2o-reseller` under the `/marketplace-overview/` path pref
 
 ### 8.1 GET `/marketplace-overview/config`
 
-Returns full configuration for the Marketplace Overview page: active subscriptions, brands, enforcement accounts, enabled modules, WBR availability, and pilot request status.
+Returns full configuration for the Marketplace Overview page: active subscriptions, brands, enforcement accounts, screen enablement (resolved from `ui_config`), WBR availability, and pilot request status.
+
+**Screen enablement query wrapped by this API (single backend contract in `i2o-reseller`):**
+```sql
+SELECT x.*
+FROM i2oretail.ui_config x
+WHERE x.org_id = :org_id
+  AND x.property_cd IN (
+    'BrandProtector',
+    'BrandProtector.Enforcement_Center',
+    'BrandProtector.BrandViolation.BrandViolations'
+  )
+ORDER BY x.property_cd;
+```
 
 **Response:**
 ```json
@@ -843,8 +865,14 @@ Returns full configuration for the Marketplace Overview page: active subscriptio
       }
     }
   ],
-  "subscriptionType": "GA+BP",
-  "subscriptionTypeId": 5,
+  "screenEnablement": {
+    "source": "ui_config",
+    "propertyCodes": [
+      "BrandProtector",
+      "BrandProtector.Enforcement_Center",
+      "BrandProtector.BrandViolation.BrandViolations"
+    ]
+  },
   "brands": [
     { "id": "1", "name": "Denon" },
     { "id": "2", "name": "Polk" },
@@ -1146,9 +1174,9 @@ The Marketplace Overview uses a **two-column layout** with a full-width filter b
 
 | Link Label | Destination Route | Condition |
 |-----------|------------------|-----------|
-| View analytics → | `/brand-protector/benefits` | Subscription includes BP, GA, or GAE (IDs: 1,2,3,5,6,7,8,9,10,11) |
-| View enforcement → | `/brand-protector/enforcement-center` | Subscription includes BP (IDs: 3,5,7,8,9,11) |
-| Brand Violations → | `/brand-protector/brand-violations` | Subscription includes BP (IDs: 3,5,7,8,9,11) |
+| View analytics → | `/brand-protector/benefits` | `enabledModules.analytics = true` (derived from `BrandProtector`) |
+| View enforcement → | `/brand-protector/enforcement-center` | `enabledModules.enforcement = true` (derived from `BrandProtector.Enforcement_Center`) |
+| Brand Violations → | `/brand-protector/brand-violations` | `enabledModules.brandViolations = true` (derived from `BrandProtector.BrandViolation.BrandViolations`) |
 
 All navigation uses Angular Router `routerLink` — same-app navigation, no page reload.
 
@@ -1240,7 +1268,7 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 |------------|--------------|-------|----------|----------|---------------|
 | GCP bucket names/paths for marketplace data, WBR, audit sample | US002, US004, US007 | Data Team | 2026-04-11 | Open | Dev/staging use mock buckets only; production deployment blocked |
 | Brand-level marketplace JSON schema confirmed (`brand_id`, `brand_name`, marketplace metrics) | US002, US003 | Data Team + Backend Lead | 2026-04-11 | Open | Temporary parser adapter allowed in dev; production blocked if brand-level contract missing |
-| Subscription config API shape signed off (`org_subscription_type_id` + module mapping inputs) | US001, US009 | Backend Lead | 2026-04-12 | Open | Hardcoded demo config allowed in dev only; staging/prod blocked |
+| Screen enablement query contract signed off (`ui_config` + property codes `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`) | US001, US009 | Backend Lead | 2026-04-12 | Open | Dev/staging can use seeded `ui_config` rows; production blocked until contract validation |
 | Support email trigger path validated end-to-end (`i2o-reseller` -> `i2o-email-service` -> SendGrid) | US005, US006 | Platform + Support Ops | 2026-04-12 | Open | Use non-prod alias in dev/staging; production blocked until successful smoke test |
 | PID disposition captured (PID path provided OR Product sign-off "not applicable") | Governance / release approval | Product Owner | 2026-04-10 | Open | Architecture remains `Not Approved` until disposition is recorded |
 
@@ -1351,7 +1379,7 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 
 | Event Name | Trigger | Required Dimensions |
 |------------|---------|---------------------|
-| `mo_screen_viewed` | Marketplace Overview page loads successfully | `org_id`, `user_id`, `brand_filter`, `enforcement_filter`, `region`, `subscription_type_id`, `session_id`, `event_ts` |
+| `mo_screen_viewed` | Marketplace Overview page loads successfully | `org_id`, `user_id`, `brand_filter`, `enforcement_filter`, `region`, `bp_enabled`, `enforcement_enabled`, `brand_violations_enabled`, `session_id`, `event_ts` |
 | `mo_pilot_requested` | `start-pilot` accepted (200/202) | `org_id`, `user_id`, `marketplace`, `region`, `brand_filter`, `request_status`, `event_ts` |
 | `mo_audit_requested` | `request-audit` accepted | `org_id`, `user_id`, `marketplace`, `region`, `brand_filter`, `duplicate_flag`, `event_ts` |
 | `mo_wbr_download_initiated` | User clicks WBR View and API returns signed URL | `org_id`, `user_id`, `latest_wbr_date`, `event_ts` |
@@ -1450,7 +1478,7 @@ Pain badges must not rely on color alone:
 | PID artifact missing or unconfirmed as N/A | **HIGH** — Architecture sign-off may be blocked by governance gap | Product Owner must provide PID path or sign-off "PID not applicable" before implementation approval (Sections 1.5, 10.5, 17). |
 | GCP bucket URLs not yet confirmed by data team | **HIGH** — Blocks unsubscribed data, WBR download, audit sample | Use mock data for dev/staging. Bucket URLs must be resolved by end of Week 1. Config stored in `application_properties` for easy update. |
 | GCP marketplace data JSON schema not finalized | **MEDIUM** — Parser may need rework | Define adapter pattern in `MarketplaceUnsubscribedDataService` to isolate parsing logic. |
-| Subscription type mapping may not cover future module combinations | **LOW** — New subscription types would need mapping update | `SubscriptionModuleResolver` uses a static set of BP-containing type IDs (3,5,7,8,9,11); new types require a code update to the resolver. |
+| `ui_config` property code drift across environments | **MEDIUM** — Navigation links may render incorrectly if expected property keys are missing/renamed | Add startup validation in `i2o-reseller` for required keys and include an integration test seeded with `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`. |
 | Email service (support@i2oretail.com) not configured for trigger address | **MEDIUM** — Pilot/audit emails may not be received | Test with internal email alias in dev/staging. Switch to production address before go-live. |
 | Enforcement account table (`org_marketplace_account`) may have different column names | **MEDIUM** — Query may fail | Validate PostgreSQL schema in Week 1. Adapt DTO mapping if columns differ. |
 | Release_8 frontend module needs significant rework | **LOW** — Effort estimation may be off | Module structure preserved; components replaced. Common components (filter dropdowns) reused. |
@@ -1461,7 +1489,7 @@ Pain badges must not rely on color alone:
 
 ## 15. Architecture Decisions (ADR Summary)
 
-ADR records are captured inline below for release_9 (no external ADR files are referenced in this release folder).
+ADR records are tracked in `docs/design/ADR/` and summarized below.
 
 | ADR ID | Date | Decision | Rationale | Consequence |
 |--------|------|----------|-----------|-------------|
@@ -1469,6 +1497,7 @@ ADR records are captured inline below for release_9 (no external ADR files are r
 | ADR-002 | 2026-04-03 | Use GCS signed URLs for WBR and audit sample downloads | Avoid API proxy load for large files; preserve object-level access control and expiry | Download reliability depends on bucket readiness and signed URL expiry tuning |
 | ADR-003 | 2026-04-03 | Cache GCP unsubscribed data in PostgreSQL with brand-level rows and 24h TTL | Supports PRD US003 brand-filter behavior across unsubscribed cards without repeated GCS reads | Requires data team to provide brand-level schema and backend aggregation logic |
 | ADR-004 | 2026-04-04 | Resolve pilot/audit email failure contradiction using error-class decision table | PRD contains conflicting outcomes (error+retry vs optimistic success+silent retry) | Implementation must include `marketplace_email_outbox` and retry/alert operations |
+| ADR-005 | 2026-04-06 | Switch navigation/screen enablement source from `organization.subscription_type` mapping to `ui_config.property_cd` query wrapped by `GET /marketplace-overview/config` | Aligns module gating with tenant-specific UI config and requested property-code contract for org-level enablement | Removes static subscription-type coupling; requires validated `ui_config` seed/config in each environment |
 
 ---
 
@@ -1492,7 +1521,7 @@ ADR records are captured inline below for release_9 (no external ADR files are r
 ### Architect Prompt for Implementation Agents
 
 The architecture is ready for implementation when:
-1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths, brand-level data schema, subscription config shape, and email trigger readiness)
+1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths, brand-level data schema, screen enablement query contract, and email trigger readiness)
 2. `org_marketplace_account` schema columns are confirmed (Open Item #2)
 3. Product Owner records PID disposition (PID path or explicit "PID not applicable for release_9")
 4. KPI dashboard in Section 12.5 is created in staging with validated event flow for PRD B4 metrics
@@ -1501,4 +1530,28 @@ The architecture is ready for implementation when:
 1. **Week 1–2:** US001 (Active Subscriptions) + US003 (Filters) + US002 (Unsubscribed Marketplaces) — core screen with both columns
 2. **Week 2–3:** US004 (WBR Download) + US005 (Start Free Pilot) + US006 (Request Audit Report)
 3. **Week 3:** US007 (View Audit Sample)
-4. **Week 3–4:** US009 (Navigation Links) — depends on subscription config API being stable
+4. **Week 3–4:** US009 (Navigation Links) — depends on `ui_config` screen-enablement API contract being stable
+
+---
+
+## 18. Architect Checklist Validation
+
+Checklist source: `/Users/sandeepofficial/.codex/skills/generate-update-architecture/checklist/architect-checklist.md`  
+Validation mode: Comprehensive (full-stack sections evaluated)
+
+| Checklist Section | Result | Evidence |
+|-------------------|--------|----------|
+| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. New screen-enablement requirement is captured in Sections 6.1, 7.1, 8.1, 9.3. |
+| 2. Architecture Fundamentals | PASS | Clear context/system diagrams and component responsibilities (Sections 3, 5). Runtime flows specify query-level behavior (Section 6). |
+| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision update for `ui_config` enablement added (Section 4.1, ADR-005). |
+| 4. Frontend Design & Implementation | PASS | Component hierarchy, routing, conditions, responsive behavior, and API integration are specified (Sections 5.2, 8, 9). |
+| 5. Resilience & Operational Readiness | PASS | Error handling, retries, caching, observability, and dependency gate are explicit (Sections 10, 12). |
+| 6. Security & Compliance | PASS | AuthN/AuthZ, tenant isolation, rate limiting, input validation, and transport controls are documented (Section 11). |
+| 7. Implementation Guidance | PASS | Coding/testing standards, endpoint contracts, migration notes, and implementation order are documented (Sections 8, 10.4, 13, 17). |
+| 8. Dependency & Integration Management | PASS | Internal/external dependencies and fallbacks are tracked in go/no-go table (Section 10.5), including new `ui_config` contract dependency. |
+| 9. AI Agent Implementation Suitability | PASS | Module/package structure, DTO boundaries, deterministic contracts, and explicit query/mapping logic are documented (Sections 5.3, 7.1, 8.1). |
+| 10. Accessibility Implementation | PASS | WCAG 2.1 AA requirements, ARIA guidance, keyboard/focus behaviors, and testing approach are defined (Section 13.4). |
+
+**Checklist remediation summary**
+- No critical checklist failures remain after the v1.2 update.
+- Residual governance dependency: PID disposition is still open and tracked as a release gate (Sections 1.5, 10.5, 14, 17).
