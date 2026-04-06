@@ -10,7 +10,7 @@
 This document describes the technical architecture for the **Marketplace Overview — Client-Facing Redesign** under Brand Protector. This release replaces the release_8 internal KPI dashboard with a redesigned client-facing screen that shows:
 
 - **Active subscription cards** per marketplace + region with brand details, enforcement accounts, and navigation links
-- **Unsubscribed marketplace cards** ranked by pain level (reseller count) with pilot/audit request CTAs
+- **Unsubscribed marketplace cards** with UI-only metric placeholders (`##`) and pilot/audit request CTAs
 - **Brand and enforcement account filter bar**
 - **Weekly Business Review (WBR) download** from GCP
 - **Start Free Pilot** and **Request Audit Report** email workflows
@@ -23,7 +23,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | Priority | Goal | Metric |
 |----------|------|--------|
 | 1 | Performance | Screen loads < 3s (P95) — all subscription cards + unsubscribed cards rendered |
-| 2 | Correctness | Subscription status, brand associations, and reseller counts match source data |
+| 2 | Correctness | Subscription status, brand associations, and WBR metadata match source data; unsubscribed metrics intentionally render as UI placeholders (`##`) |
 | 3 | Availability | 99.5% uptime for data read paths |
 | 4 | Extensibility | Adding a new marketplace requires config change only — no core refactoring |
 | 5 | Security | Multi-tenant isolation — `org_id` enforced on all queries; role-based access via Keycloak |
@@ -44,15 +44,16 @@ This document describes the technical architecture for the **Marketplace Overvie
 |--------|-----------|-----------|
 | **Screen purpose** | Internal KPI dashboard (10 KPIs per marketplace) | Client-facing brand protection health overview |
 | **Layout** | Card/Table toggle, 4 fixed marketplace cards | Two-column: Active Subscriptions (left) + Unsubscribed Marketplaces (right) |
-| **Data model** | Weekly KPI snapshot from BigQuery aggregation | Subscription config + GCP bucket marketplace data (quarterly) |
+| **Data model** | Weekly KPI snapshot from BigQuery aggregation | Subscription config + UI placeholder metrics for unsubscribed cards |
 | **Filters** | Brand, Region, Calendar, View Toggle | Brand, Enforcement Account, Region (US only in this release) |
 | **New features** | Initiate Trial email | WBR download, Start Free Pilot, Request Audit Report, View Audit Sample, Enforcement account popup, Navigation links |
-| **Data source** | BigQuery → PostgreSQL snapshot (weekly) | PostgreSQL config + GCP bucket (quarterly marketplace data, WBR artifacts, audit samples) |
+| **Data source** | BigQuery → PostgreSQL snapshot (weekly) | PostgreSQL config + GCP WBR/audit artifacts + frontend placeholder metrics (`##`) for unsubscribed cards |
 
 ### Change Log
 
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2026-04-06 | v1.6 | Removed canonical/backend metrics path for unsubscribed marketplaces; UI now renders `##` placeholders only with no API/backend logic | Sandeep |
 | 2026-04-06 | v1.5 | Defined canonical WBR metadata lookup through `schedule_wbr_details` + `sw.gcs_location` JSON for latest date and download target | Sandeep |
 | 2026-04-06 | v1.4 | Reverted active subscription sourcing to legacy `org_market_mapping` API path; brands from `brand_master`; enforcement accounts from `account` + `account_brand`; `ui_config` retained only for screen enablement | Sandeep |
 | 2026-04-06 | v1.3 | Updated active subscription cards to be sourced from `ui_config` (same config source family as screen enablement) | Sandeep |
@@ -96,6 +97,14 @@ This document describes the technical architecture for the **Marketplace Overvie
 - `sw.gcs_location` is stored as JSON. The backend parses that payload and uses the published GCS URL from the JSON as the WBR download target.
 - `GET /marketplace-overview/config` uses the same lookup to populate `wbrInfo.available` and `wbrInfo.latestDate`.
 
+### Change Notes (v1.6)
+
+- Canonical source for unsubscribed marketplace metrics (`totalProducts`, `totalListings`, `totalResellers`) is not available for release_9.
+- Unsubscribed cards now render metric placeholders (`##`) in frontend only.
+- No `GET /marketplace-overview/unsubscribed-marketplaces` endpoint is used in release_9.
+- No backend aggregation, pain-level derivation, cache table, or marketplace-metrics parser logic is part of release_9 scope.
+- ADR link: `docs/design/ADR/adr-06-04-2026-04.MD` (see Section 15).
+
 ### 1.5 Source Artifacts and Traceability Scope
 
 | Artifact | Path | Status | Decision |
@@ -114,10 +123,10 @@ This document describes the technical architecture for the **Marketplace Overvie
 | TypeScript 4.9.5, Angular Material 15.2.9, RxJS 7.5.7 | Locked frontend stack versions |
 | Keycloak for authentication | All services share Keycloak OAuth2/OIDC; org/user context derived from bearer token |
 | PostgreSQL (Cloud SQL) for operational/config data | Subscription config, marketplace config, enforcement accounts stored in PostgreSQL |
-| GCP Cloud Storage for marketplace data files and WBR artifacts | Data team populates buckets quarterly (marketplace data) and weekly (WBR); bucket URLs TBD by data team |
+| GCP Cloud Storage for WBR and audit artifacts | Data team publishes WBR artifacts weekly; bucket URLs TBD by data team |
 | Multi-tenant by `org_id` | All data queries filter by `org_id` extracted from Keycloak token — never from client payload |
 | US region only in this release | Non-US regions deferred to Phase 2 |
-| Quarterly data refresh for unsubscribed marketplace data | Data scraped quarterly by data team, stored in GCP bucket |
+| Canonical unsubscribed marketplace metrics source unavailable in release_9 | UI renders `##` placeholders only; backend/API path deferred |
 | Email via `i2o-email-service` (SendGrid) | Centralized email service for pilot/audit request emails |
 | No Gen AI summary in this release | Deferred to future state (Phase 2+) |
 
@@ -131,7 +140,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 |----------------------|--------|---------|
 | Client (Browser) | Brand/enforcement filter selections, pilot/audit requests, WBR download clicks | Rendered subscription cards, unsubscribed marketplace cards, WBR report download, confirmation messages |
 | Support Team | — | Pilot request emails, audit request emails (to support@i2oretail.com) |
-| Data Team | Quarterly marketplace data uploads to GCP, weekly WBR PDF uploads to GCP | — |
+| Data Team | Weekly WBR artifact uploads to GCP | — |
 | Account Manager | — | Self-serve screen for client meetings |
 
 ### 3.2 Technical Context
@@ -147,16 +156,16 @@ This document describes the technical architecture for the **Marketplace Overvie
   │   (Spring Boot)   │  │   (Spring Boot/SendGrid) │
   └────┬────┬─────────┘  └──────────────────────────┘
        │    │
-       │    │ GCS Client (signed URL generation, file downloads)
+       │    │ GCS Client (WBR/audit artifact URL resolution, file downloads)
        │    └──────────────────────────────────────────────┐
        │ JDBC / JPA                                        │
   ┌────▼──────────────────────────────────┐  ┌─────────────▼──────────────┐
   │ PostgreSQL (i2oretail DB)             │  │ Google Cloud Storage        │
-  │ - org_market_mapping                  │  │ - Marketplace data bucket   │
-  │ - ui_config (screen enablement)       │  │   (quarterly JSON/CSV)      │
-  │ - brand_master                        │  │ - WBR PDF bucket            │
-  │ - account / account_brand             │  │   (weekly zip per client)   │
-  │ - marketplace (reference)             │  │ - Audit sample PDF bucket   │
+  │ - org_market_mapping                  │  │ - WBR artifact bucket       │
+  │ - ui_config (screen enablement)       │  │   (weekly per client)       │
+  │ - brand_master                        │  │ - Audit sample PDF bucket   │
+  │ - account / account_brand             │  │                             │
+  │ - marketplace (reference)             │  │                             │
   │ - marketplace_pilot_requests          │  │                             │
   │ - ui_config / component (config)      │  └─────────────────────────────┘
   └───────────────────────────────────────┘
@@ -170,10 +179,10 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 | Neighboring System | Channel/Protocol | Details |
 |-------------------|-----------------|---------|
-| i2o-reseller | HTTPS REST | Primary backend for config, marketplace data, WBR, pilot/audit endpoints |
+| i2o-reseller | HTTPS REST | Primary backend for config, WBR, pilot/audit endpoints |
 | i2o-email-service | HTTPS REST (internal) | Called by i2o-reseller to send pilot/audit emails via SendGrid |
 | i2o-master-data | JDBC (shared PostgreSQL) | Source for brand, org, marketplace, enforcement account reference data |
-| Google Cloud Storage | GCS Client Library | Marketplace data files (quarterly), WBR artifacts (weekly), audit sample PDFs |
+| Google Cloud Storage | GCS Client Library | WBR artifacts (weekly), audit sample PDFs |
 | Keycloak | OIDC/OAuth2 | Authentication, user/org context, role-based access |
 
 ---
@@ -186,13 +195,12 @@ This document describes the technical architecture for the **Marketplace Overvie
 |----------|--------|-----------|
 | Frontend Module | Rework existing `marketplace-overview` Angular module in `frontendapplication-i2oretail` | Module already exists from release_8; components will be replaced with new layout |
 | Active Subscription Data | Read from legacy mapping path (`org_market_mapping` + `marketplace`) with org scope | Preserves existing marketplace/region mapping behavior and compatibility with older API flow |
-| Unsubscribed Marketplace Data | Read brand-level marketplace data from GCP bucket (JSON) via new `i2o-reseller` endpoint | Supports PRD US003 requirement that brand filter affects unsubscribed cards by aggregating only selected brands |
-| Unsubscribed Data Caching | Cache brand-level unsubscribed rows in PostgreSQL `marketplace_unsubscribed_cache` table with TTL | Avoid repeated GCS reads on every page load; aggregate by selected brand IDs at request time |
+| Unsubscribed Marketplace Data | UI-only placeholder metrics (`##`) rendered in frontend | Canonical metrics source is not available for release_9, so backend/API sourcing is intentionally removed |
 | WBR Download | Return published GCS URL resolved from `sw.gcs_location` JSON via `i2o-reseller` endpoint | Avoids proxying large files through the API; the published URL is object-specific and tenant-scoped by `org_id` |
 | Audit Sample PDF | Serve from GCS signed URL | Separate pattern from WBR; static PDF stored in GCS |
 | Pilot/Audit Email | Two new POST endpoints in `i2o-reseller`, both call `i2o-email-service` | Reuse existing email infrastructure; separate endpoints for distinct workflows |
 | Pilot Request Tracking | New PostgreSQL table `marketplace_pilot_requests` | Track which user requested pilot for which marketplace; prevent duplicate requests |
-| Pain Level Calculation | Server-side in `i2o-reseller` based on `total_resellers` from GCP data | 0–50 = Low, 51–200 = Medium, 201+ = High; calculated at API response time |
+| Pain Level Calculation | Not computed in release_9 | Pain metric depends on missing canonical source; UI displays neutral placeholders |
 | Filter State | Frontend-only; no server-side persistence | Filters reset to defaults on page refresh (PRD requirement) |
 | Enforcement Account Popup | Frontend component; data loaded with subscription config | Popup renders from already-loaded config data — no additional API call |
 | Navigation Links | Frontend routing; conditional rendering based on `i2oretail.ui_config.property_cd` values for the org | `BrandProtector` controls BP navigation visibility; `BrandProtector.Enforcement_Center` controls Enforcement link; `BrandProtector.BrandViolation.BrandViolations` controls Brand Violations link (see Section 7.1). |
@@ -203,7 +211,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | Module | Repository | Change Type | Description |
 |--------|-----------|-------------|-------------|
 | `frontendapplication-i2oretail` | i2o-retail/frontendapplication-i2oretail | REWORK Angular module | Replace release_8 KPI dashboard with new two-column client-facing layout |
-| `i2o-reseller` | i2o-retail/i2o-reseller | NEW `marketplaceoverview` sub-package | New endpoints: config, unsubscribed data, WBR download, pilot, audit, audit sample |
+| `i2o-reseller` | i2o-retail/i2o-reseller | NEW `marketplaceoverview` sub-package | New endpoints: config, WBR download, pilot, audit, audit sample |
 | `i2o-email-service` | i2o-retail/i2o-email-service | No change | Consumed as-is for pilot/audit emails |
 | `i2o-master-data` | i2o-retail/i2o-master-data | No schema change | Existing tables used: `org_market_mapping`, `marketplace`, `brand_master`, `account`, `account_brand`, `ui_config` |
 
@@ -226,7 +234,7 @@ graph TB
 
     subgraph "Data Stores"
         PG[(PostgreSQL<br/>i2oretail DB)]
-        GCS[Google Cloud Storage<br/>Marketplace Data / WBR / Audit PDFs]
+        GCS[Google Cloud Storage<br/>WBR / Audit PDFs]
     end
 
     subgraph "Reference Data"
@@ -251,15 +259,14 @@ graph TB
 | Name | Responsibility |
 |------|---------------|
 | `marketplace-overview` (Angular module) | Client-facing UI: subscription cards, unsubscribed cards, filter bar, WBR report, pilot/audit dialogs, navigation |
-| `MarketplaceOverviewController` (i2o-reseller) | REST API: config, unsubscribed data, WBR URL, pilot request, audit request, audit sample URL |
+| `MarketplaceOverviewController` (i2o-reseller) | REST API: config, WBR URL, pilot request, audit request, audit sample URL |
 | `MarketplaceOverviewConfigService` | Load active subscriptions from `org_market_mapping`, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, and enabled screens from `ui_config.property_cd` |
-| `MarketplaceUnsubscribedDataService` | Read/cache unsubscribed marketplace data from GCS bucket |
 | `MarketplaceWbrService` | Resolve published WBR URL from `sw.gcs_location` JSON |
 | `MarketplacePilotService` | Handle pilot request: validate, persist, trigger email |
 | `MarketplaceAuditService` | Handle audit request: validate, trigger email; serve audit sample URL |
 | `i2o-email-service` | Send templated emails to support@i2oretail.com via SendGrid |
 | PostgreSQL | Store subscription config, brand/org reference data, pilot request tracking |
-| Google Cloud Storage | Store marketplace data files (quarterly), WBR artifacts (weekly), audit sample PDFs |
+| Google Cloud Storage | Store WBR artifacts (weekly), audit sample PDFs |
 
 ### 5.2 Level 2: Frontend Module Structure
 
@@ -267,7 +274,7 @@ graph TB
 src/app/modules/marketplace-overview/
 ├── marketplace-overview.module.ts                # Feature module (lazy-loaded)
 ├── marketplace-overview-routing.module.ts        # Route: /brand-protector/marketplace-overview
-├── marketplace-overview.constants.ts             # Pain thresholds, status labels, navigation mappings
+├── marketplace-overview.constants.ts             # Status labels, navigation mappings, unsubscribed placeholders
 ├── components/
 │   ├── marketplace-overview-page/                # Parent page — two-column layout
 │   │   ├── marketplace-overview-page.component.ts
@@ -285,7 +292,7 @@ src/app/modules/marketplace-overview/
 │   │   ├── enforcement-popup.component.ts
 │   │   ├── enforcement-popup.component.html
 │   │   └── enforcement-popup.component.scss
-│   ├── unsubscribed-card/                        # Unsubscribed marketplace card with pain badge
+│   ├── unsubscribed-card/                        # Unsubscribed marketplace card with `##` metric placeholders
 │   │   ├── unsubscribed-card.component.ts
 │   │   ├── unsubscribed-card.component.html
 │   │   └── unsubscribed-card.component.scss
@@ -303,14 +310,14 @@ src/app/modules/marketplace-overview/
 │       └── audit-sample-banner.component.scss
 ├── models/
 │   ├── subscription-card.model.ts                # ActiveSubscription, EnforcementAccount, BrandPill interfaces
-│   ├── unsubscribed-marketplace.model.ts         # UnsubscribedMarketplace, PainLevel interfaces
+│   ├── unsubscribed-marketplace.model.ts         # UnsubscribedMarketplace placeholder interfaces
 │   ├── filter.model.ts                           # MarketplaceOverviewFilter, Brand, EnforcementAccount interfaces
 │   └── wbr.model.ts                              # WbrInfo interface
 ├── services/
 │   ├── marketplace-overview-api.service.ts       # HTTP calls via rest-api.service.ts
 │   └── marketplace-overview-state.service.ts     # RxJS BehaviorSubject state management
 └── pipes/
-    └── pain-level.pipe.ts                        # Transform reseller count → pain badge label + color class
+    └── index.ts                                  # No custom pipes required for unsubscribed placeholders
 ```
 
 ### 5.3 Level 2: Backend Sub-Package Structure
@@ -319,10 +326,9 @@ src/app/modules/marketplace-overview/
 com.corecompete.i2o/
 └── marketplaceoverview/
     ├── controller/
-    │   └── MarketplaceOverviewController.java      # 6 endpoints (see Section 8)
+    │   └── MarketplaceOverviewController.java      # 5 endpoints (see Section 8)
     ├── service/
     │   ├── MarketplaceOverviewConfigService.java    # Subscription + filter config assembly
-    │   ├── MarketplaceUnsubscribedDataService.java  # GCS read + PostgreSQL cache for marketplace data
     │   ├── MarketplaceWbrService.java               # Resolve published WBR URL from `sw.gcs_location` JSON
     │   ├── MarketplacePilotService.java             # Pilot request validation, persistence, email trigger
     │   └── MarketplaceAuditService.java             # Audit request email trigger + sample URL
@@ -330,17 +336,15 @@ com.corecompete.i2o/
     │   ├── MarketplaceOverviewConfigResponse.java   # Config payload with subscriptions, brands, enforcement accounts
     │   ├── ActiveSubscriptionDto.java               # Per-marketplace subscription card data
     │   ├── EnforcementAccountDto.java               # Account name + linked brands
-    │   ├── UnsubscribedMarketplaceDto.java          # Marketplace data + pain level
     │   ├── PilotRequestDto.java                     # Pilot request input
     │   ├── AuditRequestDto.java                     # Audit request input
-    │   ├── WbrDownloadResponse.java                 # Signed URL + metadata
+    │   ├── WbrDownloadResponse.java                 # Published URL + metadata
     │   └── ApiResponse.java                         # Generic success/error response
     ├── entity/
     │   └── MarketplacePilotRequest.java             # JPA entity for pilot request tracking
     ├── repository/
     │   └── MarketplacePilotRequestRepository.java   # Spring Data JPA repository
     └── enums/
-        ├── PainLevel.java                           # LOW, MEDIUM, HIGH with threshold logic
         └── MarketplaceStatus.java                   # ACTIVE, UNSUBSCRIBED
 ```
 
@@ -394,22 +398,9 @@ Browser                  i2o-reseller                           PostgreSQL / GCS
   │    { subscriptions[], brands[], enforcementAccounts[],           │
   │      enabledModules[], wbrInfo }                                 │
   │                                                                  │
-  │ GET /marketplace-overview/unsubscribed-marketplaces?brands=1,2   │
-  │──────────────────────────>│                                      │
-  │                           │── Check PostgreSQL cache (TTL 24h)   │
-  │                           │   IF cache fresh: query cached rows  │
-  │                           │   by org_id + selected brand_ids      │
-  │                           │   IF cache stale: read from GCS ────>│ GCS bucket
-  │                           │     Parse brand-level JSON rows       │
-  │                           │     Cache in PostgreSQL               │
-  │                           │   Aggregate selected brands per       │
-  │                           │   marketplace/region + compute pain   │
-  │                           │   ORDER BY total_resellers DESC,      │
-  │                           │            marketplace_name ASC        │
-  │                           │<── unsubscribed marketplace data ────│
-  │<── UnsubscribedMarketplaceDto[] ─────────────────────────────────│
-  │    { marketplace, region, totalProducts, totalListings,          │
-  │      totalResellers, painLevel, dataDate }                       │
+  │ Frontend renders unsubscribed cards with UI-only placeholders    │
+  │ (`Total Products: ##`, `Total Listings: ##`, `Total Resellers: ##`) │
+  │ without backend/API metric lookup                                 │
   │                                                                  │
   │ Render two-column layout                                         │
 ```
@@ -677,32 +668,9 @@ CREATE INDEX IF NOT EXISTS idx_marketplace_email_outbox_retry
 
 **Purpose:** Persist retryable email failures (transport timeout, DNS/connectivity, HTTP 5xx from `i2o-email-service`) so users can receive optimistic success without losing requests. Retry policy is config-driven (Section 10.3).
 
-#### `marketplace_unsubscribed_cache` — Cached GCP Marketplace Data
-```sql
-CREATE TABLE IF NOT EXISTS marketplace_unsubscribed_cache (
-  id                BIGSERIAL PRIMARY KEY,
-  org_id            BIGINT NOT NULL,
-  brand_id          BIGINT NOT NULL,
-  brand_name        VARCHAR(255) NOT NULL,
-  marketplace       VARCHAR(64) NOT NULL,
-  region            VARCHAR(32) NOT NULL,
-  total_products    BIGINT,
-  total_listings    BIGINT,
-  total_resellers   BIGINT,
-  data_date         DATE,                    -- data freshness date from GCP file
-  gcp_file_path     VARCHAR(512),            -- source GCP object path
-  cached_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  expires_at        TIMESTAMPTZ NOT NULL,    -- cached_at + 24h
+#### `marketplace_unsubscribed_cache` — Not Used in release_9
 
-  CONSTRAINT uq_unsubscribed_cache
-    UNIQUE (org_id, brand_id, marketplace, region)
-);
-
-CREATE INDEX IF NOT EXISTS idx_unsubscribed_cache_lookup
-  ON marketplace_unsubscribed_cache (org_id, brand_id, expires_at);
-```
-
-**Purpose:** Cache brand-level marketplace rows from GCP so that unsubscribed cards can be recomputed for any selected brand set (PRD US003). Data refreshes when cache expires (24h TTL) or when GCP file timestamp changes.
+Release_9 does not implement backend storage/aggregation for unsubscribed marketplace metrics. Cards render frontend placeholders (`##`) only until a canonical source is approved.
 
 ### 7.3 GCP Cloud Storage Bucket Structure
 
@@ -714,11 +682,6 @@ gs://{wbr-bucket}/
             └── {week_number}/
                 └── wbr_{org_name}_{date}.pptx    # Published WBR artifact referenced by sw.gcs_location
 
-gs://{marketplace-data-bucket}/
-└── {org_id}/
-    └── unsubscribed/
-        └── marketplace_data_{date}.json          # Quarterly marketplace data
-
 gs://{audit-sample-bucket}/
 └── samples/
     └── i2o_brand_protection_audit_sample.pdf     # Static sample PDF
@@ -726,35 +689,12 @@ gs://{audit-sample-bucket}/
 
 **Assumption:** Bucket names and exact paths will be provided by the data team. The `org_id` prefix ensures tenant isolation at the storage level. Bucket URLs stored in `application_properties` table (`module='marketplace_overview'`).
 
-### 7.4 GCP Marketplace Data JSON Schema (from GCS Bucket)
+### 7.4 Unsubscribed Metrics Contract Status
 
-```json
-{
-  "data_date": "2026-03-18",
-  "rows": [
-    {
-      "brand_id": 1,
-      "brand_name": "Denon",
-      "marketplace": "EBAY",
-      "region": "US",
-      "total_products": 3420,
-      "total_listings": 1025,
-      "total_resellers": 790
-    },
-    {
-      "brand_id": 2,
-      "brand_name": "Polk",
-      "marketplace": "TIKTOK_SHOP",
-      "region": "US",
-      "total_products": 1840,
-      "total_listings": 620,
-      "total_resellers": 45
-    }
-  ]
-}
-```
-
-**Contract:** Brand-level rows are required for release_9 so `/unsubscribed-marketplaces` can aggregate by selected brand IDs. If this schema is not provided, production go-live is blocked by the dependency gate in Section 10.5.
+Canonical source for unsubscribed marketplace metrics is currently unavailable. For release_9:
+- No backend ingestion/parsing contract is defined.
+- No API contract is defined for metric retrieval.
+- UI displays `##` placeholders for `totalProducts`, `totalListings`, and `totalResellers`.
 
 ### 7.5 Key TypeScript Interfaces (Frontend)
 
@@ -796,17 +736,15 @@ export const MODULE_NAVIGATION: Record<string, string> = {
 
 // models/unsubscribed-marketplace.model.ts
 
-export type PainLevel = 'LOW' | 'MEDIUM' | 'HIGH';
-
 export interface UnsubscribedMarketplace {
   marketplace: string;
   region: string;
   logoUrl: string;
-  dataDate: string;            // ISO date — data freshness
-  totalProducts: number;
-  totalListings: number;
-  totalResellers: number;
-  painLevel: PainLevel;        // derived from totalResellers
+  dataDate: string | null;     // null in release_9 until canonical source is available
+  totalProducts: string;       // always "##" in release_9
+  totalListings: string;       // always "##" in release_9
+  totalResellers: string;      // always "##" in release_9
+  painLevel: string;           // always "##" in release_9
   pilotRequested: boolean;     // true if pilot already requested by this user
 }
 
@@ -982,64 +920,14 @@ where period = :latestPeriod
 }
 ```
 
-### 8.2 GET `/marketplace-overview/unsubscribed-marketplaces`
+### 8.2 Unsubscribed Metrics Retrieval
 
-Returns unsubscribed marketplace data with pain levels. Filters out marketplaces the client is already subscribed to and applies brand filtering to this column using the same selected brand set as the subscription column (PRD US003).
+No API endpoint exists in release_9 for unsubscribed marketplace metrics.
 
-**Query Parameters:**
-- `brands` (optional): comma-separated brand IDs for filtering. If omitted, backend treats all org brands as selected.
-
-**Response:**
-```json
-{
-  "dataDate": "2026-03-18",
-  "appliedBrandIds": ["1", "2"],
-  "marketplaces": [
-    {
-      "marketplace": "eBay",
-      "region": "US",
-      "logoUrl": "/assets/logos/ebay.svg",
-      "totalProducts": 3420,
-      "totalListings": 1025,
-      "totalResellers": 790,
-      "painLevel": "HIGH",
-      "dataDate": "2026-03-18"
-    },
-    {
-      "marketplace": "TikTok Shop",
-      "region": "US",
-      "logoUrl": "/assets/logos/tiktok.svg",
-      "totalProducts": 1840,
-      "totalListings": 620,
-      "totalResellers": 45,
-      "painLevel": "LOW",
-      "dataDate": "2026-03-18"
-    }
-  ]
-}
-```
-
-**Deterministic Ordering Contract (PRD US002 corner case):**
-
-```sql
--- final response order for unsubscribed cards
-ORDER BY total_resellers DESC, marketplace_name ASC
-```
-
-**Pain Level Calculation (server-side):**
-```java
-public enum PainLevel {
-    LOW(0, 50),      // green badge
-    MEDIUM(51, 200), // amber badge
-    HIGH(201, Integer.MAX_VALUE); // red badge
-
-    public static PainLevel fromResellerCount(int count) {
-        if (count <= 50) return LOW;
-        if (count <= 200) return MEDIUM;
-        return HIGH;
-    }
-}
-```
+Release_9 behavior:
+1. Frontend renders unsubscribed cards with static metric placeholders (`##`).
+2. No backend lookup, cache, sorting, or pain-level calculation is executed.
+3. Pilot/audit actions remain available on unsubscribed cards.
 
 ### 8.3 GET `/marketplace-overview/wbr/download`
 
@@ -1213,19 +1101,19 @@ The Marketplace Overview uses a **two-column layout** with a full-width filter b
 │  │ Active Subscription │  │                                        │
 │  │ [brand pills...]   │  │  ┌────────────────────────────────────┐│
 │  │ View analytics →   │  │  │ 🛒 eBay US                       ││
-│  │ View enforcement → │  │  │ Data as of Mar 18, 2026           ││
-│  │ Brand Violations → │  │  │ Total Products: 3,420              ││
-│  └────────────────────┘  │  │ Total Listings: 1,025              ││
-│                          │  │ Total Resellers: 790 [HIGH PAIN]   ││
+│  │ View enforcement → │  │  │ Data as of: ##                     ││
+│  │ Brand Violations → │  │  │ Total Products: ##                 ││
+│  └────────────────────┘  │  │ Total Listings: ##                 ││
+│                          │  │ Total Resellers: ##                ││
 │  ┌────────────────────┐  │  │ [Start free pilot] [Request Audit] ││
 │  │ 🏪 Walmart US     │  │  └────────────────────────────────────┘│
 │  │ 6 brands · 1 enf.  │  │                                        │
 │  │ Active Subscription │  │  ┌────────────────────────────────────┐│
 │  │ [brand pills...]   │  │  │ 📱 TikTok Shop US                ││
-│  │ View analytics →   │  │  │ Data as of Mar 18, 2026           ││
-│  │ View enforcement → │  │  │ Total Products: 1,840              ││
-│  │ Brand Violations → │  │  │ Total Listings: 620                ││
-│  └────────────────────┘  │  │ Total Resellers: 45 [LOW PAIN]    ││
+│  │ View analytics →   │  │  │ Data as of: ##                     ││
+│  │ View enforcement → │  │  │ Total Products: ##                 ││
+│  │ Brand Violations → │  │  │ Total Listings: ##                 ││
+│  └────────────────────┘  │  │ Total Resellers: ##                ││
 │                          │  │ [Start free pilot] [Request Audit] ││
 │                          │  └────────────────────────────────────┘│
 └──────────────────────────┴───────────────────────────────────────┘
@@ -1254,11 +1142,11 @@ The Marketplace Overview uses a **two-column layout** with a full-width filter b
 └── <div class="unsubscribed-column">             (right column — ~45% width)
     ├── <h3>TOP UNSUBSCRIBED MARKETPLACES</h3>
     ├── <audit-sample-banner>                     ("Not sure what an audit includes?")
-    └── <unsubscribed-card *ngFor>                (ranked by totalResellers DESC, marketplace ASC as tiebreaker)
+    └── <unsubscribed-card *ngFor>                (frontend card list with placeholder metrics)
         ├── marketplace logo + name + region
-        ├── data freshness date
-        ├── Total Products, Total Listings, Total Resellers
-        ├── pain badge (Low/Medium/High)
+        ├── data freshness placeholder (`##`)
+        ├── Total Products `##`, Total Listings `##`, Total Resellers `##`
+        ├── pain placeholder (`##`)
         ├── "Start free pilot" button (or disabled with tooltip)
         └── "Request Audit Report" button
 ```
@@ -1277,7 +1165,7 @@ All navigation uses Angular Router `routerLink` — same-app navigation, no page
 
 | Filter | Type | Default | Behavior on Change |
 |--------|------|---------|-------------------|
-| Brand | Multi-select searchable dropdown | All brands selected | Both columns update: subscription cards filter by brand; unsubscribed cards recompute totals only for selected brands (API `brands` query param). Brands captured in pilot/audit emails reflect current filter selection. |
+| Brand | Multi-select searchable dropdown | All brands selected | Subscription cards filter by selected brands. Unsubscribed card metrics stay at `##` placeholders in release_9. Brands captured in pilot/audit emails reflect current filter selection. |
 | Enforcement Account | Single-select dropdown | All accounts | Subscription cards filter to show only those with selected account |
 | Region | Pill/chip | US | Fixed to US in this release |
 
@@ -1297,10 +1185,10 @@ All navigation uses Angular Router `routerLink` — same-app navigation, no page
 |---------|---------|
 | No active subscriptions | Empty state: "No active subscriptions found. Contact your AM." |
 | No unsubscribed marketplaces | Empty state: "No unmonitored marketplaces detected." |
-| GCP marketplace data unavailable | Card renders with `—` for all metrics and "Data pending" label |
+| Canonical unsubscribed metrics source unavailable | Card renders with `##` for all metrics and "Data pending" label |
 | WBR not available for current period | "Report not yet available for this period" |
 | All brands deselected in filter | "Select at least one brand" message in both columns |
-| Data older than 90 days | Yellow clock icon with "Data may be outdated" on unsubscribed cards |
+| Data freshness unknown | Show `##` and "Data pending" on unsubscribed cards |
 
 ---
 
@@ -1313,16 +1201,16 @@ All navigation uses Angular Router `routerLink` — same-app navigation, no page
 | `frontendapplication-i2oretail` | Firebase Hosting (existing) | Angular build deployed as static assets |
 | `i2o-reseller` | GCP App Engine Flex (existing WAR) | New `marketplaceoverview` package deployed with existing service |
 | `i2o-email-service` | GCP Cloud Run (existing) | No deployment change — consumed as-is |
-| PostgreSQL | GCP Cloud SQL (existing) | DDL migration for 3 new tables |
+| PostgreSQL | GCP Cloud SQL (existing) | DDL migration for 2 new tables |
 | GCS Buckets | GCP Cloud Storage (existing/new) | Data team configures buckets; API reads from them |
 
 ### 10.2 Environment Strategy
 
 | Environment | PostgreSQL | GCS Buckets | Email Recipient |
 |------------|-----------|-------------|-----------------|
-| Dev | `i2oretail_dev` | Dev bucket (mock data) | dev-support@i2oretail.com |
-| Staging | `i2oretail_staging` | Staging bucket (sample data) | staging-support@i2oretail.com |
-| Production | `i2oretail_prod` | Production bucket (real data) | support@i2oretail.com |
+| Dev | `i2oretail_dev` | Dev WBR/audit buckets | dev-support@i2oretail.com |
+| Staging | `i2oretail_staging` | Staging WBR/audit buckets | staging-support@i2oretail.com |
+| Production | `i2oretail_prod` | Production WBR/audit buckets | support@i2oretail.com |
 
 ### 10.3 Configuration
 
@@ -1331,12 +1219,10 @@ All environment-specific values stored in `application_properties` table:
 | Module | Property | Description |
 |--------|----------|-------------|
 | `marketplace_overview` | `wbr_gcs_bucket` | GCS bucket name for WBR artifacts |
-| `marketplace_overview` | `marketplace_data_gcs_bucket` | GCS bucket for quarterly marketplace data |
 | `marketplace_overview` | `audit_sample_gcs_bucket` | GCS bucket for audit sample PDFs |
 | `marketplace_overview` | `audit_sample_path` | Object path within bucket |
 | `marketplace_overview` | `support_email` | Target email for pilot/audit requests |
 | `marketplace_overview` | `wbr_path_template` | GCS path template: `{org_id}/wbr/{year}/{week}/` |
-| `marketplace_overview` | `unsubscribed_cache_ttl_hours` | Cache TTL (default: 24) |
 | `marketplace_overview` | `signed_url_expiry_minutes` | Signed URL expiry (default: 15) |
 | `marketplace_overview` | `email_retry_max_attempts` | Max retries for transport/5xx email failures (default: 6) |
 | `marketplace_overview` | `email_retry_backoff_minutes` | Comma-separated backoff schedule (default: `1,5,15,30,60,120`) |
@@ -1347,11 +1233,10 @@ All environment-specific values stored in `application_properties` table:
 
 Contents:
 1. `CREATE TABLE marketplace_pilot_requests` (Section 7.2)
-2. `CREATE TABLE marketplace_unsubscribed_cache` (Section 7.2)
-3. `CREATE TABLE marketplace_email_outbox` (Section 7.2)
-4. `INSERT INTO application_properties` for all config keys (Section 10.3)
+2. `CREATE TABLE marketplace_email_outbox` (Section 7.2)
+3. `INSERT INTO application_properties` for all config keys (Section 10.3)
 
-**Rollback:** `DROP TABLE IF EXISTS marketplace_email_outbox; DROP TABLE IF EXISTS marketplace_pilot_requests; DROP TABLE IF EXISTS marketplace_unsubscribed_cache;`
+**Rollback:** `DROP TABLE IF EXISTS marketplace_email_outbox; DROP TABLE IF EXISTS marketplace_pilot_requests;`
 
 ### 10.5 External Dependency Go/No-Go Gate
 
@@ -1359,8 +1244,8 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 
 | Dependency | Story Impact | Owner | Due Date | Go/No-Go | Fallback Plan |
 |------------|--------------|-------|----------|----------|---------------|
-| GCP bucket names/paths for marketplace data, WBR, audit sample | US002, US004, US007 | Data Team | 2026-04-11 | Open | Dev/staging use mock buckets only; production deployment blocked |
-| Brand-level marketplace JSON schema confirmed (`brand_id`, `brand_name`, marketplace metrics) | US002, US003 | Data Team + Backend Lead | 2026-04-11 | Open | Temporary parser adapter allowed in dev; production blocked if brand-level contract missing |
+| GCP bucket names/paths for WBR and audit sample | US004, US007 | Data Team | 2026-04-11 | Open | Dev/staging use mock buckets only; production deployment blocked |
+| Canonical source decision for unsubscribed marketplace metrics (post-release scope) | US002, US003 | Product + Data Team | 2026-04-18 | Open | release_9 uses frontend placeholders (`##`); no backend/API dependency |
 | Legacy marketplace-region mapping API contract (`org_market_mapping` + `marketplace`) signed off for active subscriptions | US001 | Backend Lead | 2026-04-12 | Open | Dev/staging can use fallback mock mapping payload; production blocked until contract validation |
 | `ui_config` screen-enablement contract signed off (property codes `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`) | US009 | Backend Lead | 2026-04-12 | Open | Dev/staging can use seeded `ui_config` rows; production blocked until contract validation |
 | Support email trigger path validated end-to-end (`i2o-reseller` -> `i2o-email-service` -> SendGrid) | US005, US006 | Platform + Support Ops | 2026-04-12 | Open | Use non-prod alias in dev/staging; production blocked until successful smoke test |
@@ -1386,11 +1271,11 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | Concern | Mitigation |
 |---------|-----------|
 | Cross-tenant data access | `org_id` is never accepted from client request payload; always derived from bearer token server-side |
-| GCS signed URL leakage | URLs expire in 15 minutes; scoped to specific object path |
+| GCS download URL leakage | Published/signed URLs are object-scoped; signed URLs expire in 15 minutes where applicable |
 | Email content injection | `userName` and `userEmail` sourced from Keycloak token, not client payload. Brand names validated against `brand_master` |
 | CSRF | Angular XSRF-TOKEN cookie + interceptor (existing) |
 | XSS | Angular template sanitization (existing); no raw HTML injection from API responses |
-| Data in transit | HTTPS enforced on all API calls and GCS signed URLs |
+| Data in transit | HTTPS enforced on all API calls and GCS download URLs |
 
 ### 11.3 Rate Limiting
 
@@ -1400,7 +1285,6 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | `POST /marketplace-overview/request-audit` | 5 requests / minute | Per user (Keycloak subject) | HTTP 429 Too Many Requests |
 | `GET /marketplace-overview/wbr/download` | 10 requests / minute | Per user | HTTP 429 Too Many Requests |
 | `GET /marketplace-overview/config` | 30 requests / minute | Per user | HTTP 429 Too Many Requests |
-| `GET /marketplace-overview/unsubscribed-marketplaces` | 30 requests / minute | Per user | HTTP 429 Too Many Requests |
 
 **Implementation:** Use `bucket4j-spring-boot-starter` (already available via `i2o-framework` dependency) with Keycloak subject claim as the rate-limit key. Configure via `application_properties` for per-environment tuning.
 
@@ -1423,7 +1307,7 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 |-------|---------|
 | Frontend | Toast notifications for transient errors (validation/auth failures, network issues). In-place error states for data unavailability (card shows "Data unavailable"). Retry buttons where applicable. |
 | Backend | Standard `ApiResponse` wrapper with `success: boolean` and `message: string`. HTTP status codes: 200 (success), 400 (validation), 404 (not found), 409 (conflict/duplicate), 500 (server error). |
-| GCS | If blob not found → 404. If bucket unavailable → 500 with user-friendly message. Last cached data served with staleness indicator. |
+| GCS | If blob not found → 404. If bucket unavailable → 500 with user-friendly message. |
 | Email | Canonical behavior is error-class based (Section 12.1.1): validation/auth returns blocking error; transport/5xx returns optimistic success and queues retry; async delivery failures are retried server-side with ops alerting. |
 
 #### 12.1.1 Canonical Pilot/Audit Failure Decision Table
@@ -1440,7 +1324,7 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 
 | Action | Debounce |
 |--------|----------|
-| Brand filter toggle | 300ms debounce on filter change before API refetch |
+| Brand filter toggle | 300ms debounce for card refresh and CTA context updates |
 | Start Free Pilot button | Button disabled immediately on click; re-enabled only on error |
 | Request Audit Report button | Button disabled during API call; re-enabled on completion |
 | WBR download | Button disabled during download preparation |
@@ -1451,8 +1335,8 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | Data | Strategy | TTL |
 |------|---------|-----|
 | Subscription config | Frontend in-memory (via `BehaviorSubject`) | Page session — refetched on each page entry |
-| Unsubscribed marketplace data | PostgreSQL brand-level cache (server-side), aggregated per selected brand IDs at request time | 24 hours (configurable via `application_properties`) |
-| GCS signed URLs | Not cached — generated fresh per request | URL expires in 15 minutes |
+| Unsubscribed marketplace data | Frontend placeholder literals (`##`) | Page session |
+| GCS download URLs | Not cached — resolved/generated fresh per request | Signed URL paths expire in 15 minutes where applicable |
 | Brand/enforcement filter options | Loaded with config — no separate cache | Page session |
 
 ### 12.4 Observability
@@ -1464,7 +1348,7 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 | Email delivery status | SendGrid webhook events tracked in `i2o-email-service` + outbox status metrics | Platform Team |
 | GCS operation failures | Cloud Logging (existing GCP setup) | Backend Lead |
 | Pilot request count | PostgreSQL query on `marketplace_pilot_requests` | Product Analytics |
-| Cache hit/miss rate | Log metric on `marketplace_unsubscribed_cache` lookups | Backend Lead |
+| Placeholder render health | Frontend log counter when unsubscribed cards render `##` placeholders | Frontend Lead |
 | KPI event ingestion lag | Event pipeline lag monitor (frontend event -> analytics sink) | Product Analytics |
 
 ### 12.5 Product KPI Instrumentation Plan
@@ -1498,9 +1382,9 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 | Unit Tests (Backend) | JUnit 5 + Mockito | All services, controller methods |
 | Integration Tests (Backend) | Testcontainers + JUnit | PostgreSQL queries, GCS integration |
 | E2E Tests | Playwright ^1.58.x | Full user flows: page load, filter, pilot request, WBR download |
-| API Contract Tests | REST Assured | All 6 endpoints with valid/invalid payloads |
+| API Contract Tests | REST Assured | All 5 endpoints with valid/invalid payloads |
 | Failure Semantics Tests | JUnit + REST Assured | Validate 400/401 blocking errors vs 202 optimistic acceptance + outbox writes for pilot/audit flows |
-| Ordering Determinism Tests | Integration Tests | Validate unsubscribed ordering uses `total_resellers DESC, marketplace_name ASC` for ties |
+| Unsubscribed Placeholder Tests | Unit + E2E | Validate unsubscribed cards render `##` metrics without backend API calls |
 | Analytics Event Contract Tests | Playwright + event sink assertions | Validate required KPI events and dimensions are emitted for PRD B4 metrics |
 
 ### 13.2 Performance Targets
@@ -1508,9 +1392,8 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Config API response | < 500ms (P95) | Micrometer |
-| Unsubscribed data API response | < 800ms (P95) with cache hit | Micrometer |
 | WBR URL resolution | < 300ms (P95) | Micrometer |
-| Total page load (including both API calls) | < 3s (P95) | Playwright + Performance API |
+| Total page load (single config API + static placeholders) | < 3s (P95) | Playwright + Performance API |
 | Email trigger response | < 2s (P95) | Micrometer |
 
 ### 13.3 Coding Standards
@@ -1530,13 +1413,13 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 | Component | Semantic HTML | ARIA Attributes | Keyboard Navigation |
 |-----------|--------------|-----------------|---------------------|
 | `subscription-card` | `<article>` wrapper with `<h4>` for marketplace name | `role="article"`, `aria-label="Amazon US Active Subscription"` | Tab to card, Enter to expand enforcement popup |
-| `unsubscribed-card` | `<article>` wrapper with `<h4>` for marketplace name | `role="article"`, `aria-label="eBay US — High pain level"` | Tab to card, Tab to CTA buttons |
+| `unsubscribed-card` | `<article>` wrapper with `<h4>` for marketplace name | `role="article"`, `aria-label="eBay US — metrics pending"` | Tab to card, Tab to CTA buttons |
 | `enforcement-popup` | `<div role="dialog">` with `<ul>` for account list | `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing to heading | Escape to close, Tab cycles within popup, focus trapped while open |
 | `pilot-dialog` | `<dialog>` or `<div role="dialog">` | `role="dialog"`, `aria-modal="true"`, `aria-describedby` for confirmation text | Focus moves to dialog on open, Escape to dismiss, Enter to confirm |
 | `audit-dialog` | Same as pilot-dialog | Same pattern | Same pattern |
 | `filter-bar` brand dropdown | `<select>` or `<mat-select>` | `aria-label="Filter by brand"`, `aria-multiselectable="true"` | Arrow keys to navigate options, Space to toggle selection |
 | `filter-bar` enforcement dropdown | `<mat-select>` | `aria-label="Filter by enforcement account"` | Arrow keys + Enter to select |
-| Pain badge | `<span>` with text + color | `aria-label="High pain — 790 resellers"` (text alternative for color) | Not interactive — info only |
+| Metrics placeholder | `<span>` with text only | `aria-label="Total resellers pending"` | Not interactive — info only |
 | Navigation links | `<a routerLink>` | `aria-label="View analytics for Amazon US"` | Tab + Enter to navigate |
 | WBR download link | `<a>` or `<button>` | `aria-label="Download Weekly Business Review — Latest March 28, 2026"` | Tab + Enter |
 
@@ -1550,10 +1433,7 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 
 #### Color Independence
 
-Pain badges must not rely on color alone:
-- **Low pain:** Green badge with text "Low" + down-arrow icon
-- **Medium pain:** Amber badge with text "Medium" + dash icon
-- **High pain:** Red badge with text "High" + up-arrow icon
+Unsubscribed metrics use text placeholders (`##`) and "Data pending" labels, so no color-only encoding is required in release_9.
 
 #### Accessibility Testing
 
@@ -1570,14 +1450,14 @@ Pain badges must not rely on color alone:
 | Risk/Debt | Impact | Mitigation Strategy |
 |-----------|--------|---------------------|
 | PID artifact missing or unconfirmed as N/A | **HIGH** — Architecture sign-off may be blocked by governance gap | Product Owner must provide PID path or sign-off "PID not applicable" before implementation approval (Sections 1.5, 10.5, 17). |
-| GCP bucket URLs not yet confirmed by data team | **HIGH** — Blocks unsubscribed data, WBR download, audit sample | Use mock data for dev/staging. Bucket URLs must be resolved by end of Week 1. Config stored in `application_properties` for easy update. |
-| GCP marketplace data JSON schema not finalized | **MEDIUM** — Parser may need rework | Define adapter pattern in `MarketplaceUnsubscribedDataService` to isolate parsing logic. |
+| GCP bucket URLs not yet confirmed by data team | **HIGH** — Blocks WBR download and audit sample | Use mock data for dev/staging. Bucket URLs must be resolved by end of Week 1. Config stored in `application_properties` for easy update. |
+| Canonical unsubscribed metrics source missing | **MEDIUM** — Right-column metrics remain placeholders (`##`) | Explicitly document placeholder behavior in release_9. Track canonical source as follow-up dependency (Section 10.5). |
 | `ui_config` property code drift across environments | **MEDIUM** — Navigation links may render incorrectly if expected property keys are missing/renamed | Add startup validation in `i2o-reseller` for required screen keys and include integration tests seeded with `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`. |
 | Email service (support@i2oretail.com) not configured for trigger address | **MEDIUM** — Pilot/audit emails may not be received | Test with internal email alias in dev/staging. Switch to production address before go-live. |
 | Enforcement account schema (`account` / `account_brand`) may differ by environment | **MEDIUM** — Query may fail | Validate `account.account_id`, `account.org_id`, and `account_brand.account_id` mapping in Week 1. Adapt DTO mapping if columns differ. |
 | Release_8 frontend module needs significant rework | **LOW** — Effort estimation may be off | Module structure preserved; components replaced. Common components (filter dropdowns) reused. |
-| Quarterly data may be stale for unsubscribed marketplaces | **LOW** — User sees old data | Show data freshness date on every card. Warning icon if data > 90 days old. |
-| Signed URL expiry (15 min) may cause failed downloads for large WBR files | **LOW** — Download timeout | Increase to 30 min if needed. Frontend shows loading indicator. |
+| Placeholder metrics may reduce decision confidence for pilots | **LOW** — Users cannot compare absolute metric volumes in release_9 | Keep pilot/audit CTAs enabled and surface "Data pending" context on cards. |
+| Signed URL expiry (15 min) may cause failed downloads for audit sample downloads | **LOW** — Download timeout | Increase to 30 min if needed. Frontend shows loading indicator. |
 
 ---
 
@@ -1588,12 +1468,13 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 | ADR ID | Date | Decision | Rationale | Consequence |
 |--------|------|----------|-----------|-------------|
 | ADR-001 | 2026-04-03 | Replace release_8 card/table toggle with dedicated two-column layout | Matches client-facing UX intent and separates active vs unsubscribed actions clearly | Existing release_8 components are reworked rather than incrementally extended |
-| ADR-002 | 2026-04-03 | Use GCS signed URLs for WBR and audit sample downloads | Avoid API proxy load for large files; preserve object-level access control and expiry | Download reliability depends on bucket readiness and signed URL expiry tuning |
-| ADR-003 | 2026-04-03 | Cache GCP unsubscribed data in PostgreSQL with brand-level rows and 24h TTL | Supports PRD US003 brand-filter behavior across unsubscribed cards without repeated GCS reads | Requires data team to provide brand-level schema and backend aggregation logic |
+| ADR-002 | 2026-04-03 | Use GCS signed URLs for download artifacts | Avoid API proxy load for large files; preserve object-level access control and expiry | Applied to audit sample; WBR path now uses published URL contract (Section 8.3) |
+| ADR-003 | 2026-04-03 | Cache GCP unsubscribed data in PostgreSQL with brand-level rows and 24h TTL | Supports PRD US003 brand-filter behavior across unsubscribed cards without repeated GCS reads | Superseded for release_9 by ADR-008 (placeholder-only unsubscribed metrics) |
 | ADR-004 | 2026-04-04 | Resolve pilot/audit email failure contradiction using error-class decision table | PRD contains conflicting outcomes (error+retry vs optimistic success+silent retry) | Implementation must include `marketplace_email_outbox` and retry/alert operations |
 | ADR-005 | 2026-04-06 | Switch navigation/screen enablement source from `organization.subscription_type` mapping to `ui_config.property_cd` query wrapped by `GET /marketplace-overview/config` | Aligns module gating with tenant-specific UI config and requested property-code contract for org-level enablement | Removes static subscription-type coupling; requires validated `ui_config` seed/config in each environment |
 | ADR-006 | 2026-04-06 | Switch active subscription card source from `org_market_mapping` to `ui_config` rows consumed by `GET /marketplace-overview/config` | Keeps active-card rendering in the same org-level configuration source family as navigation/screen enablement | Reduces split-source config but adds dependency on `ui_config` payload consistency for card composition |
 | ADR-007 | 2026-04-06 | Revert active subscription source to legacy `org_market_mapping` API path; keep only screen enablement in `ui_config` | Aligns with current implementation directive: marketplace/region mapping from legacy API, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, while retaining `ui_config` only for navigation/screen gates | Supersedes ADR-006 and restores split-source model with lower migration risk for release_9 |
+| ADR-008 | 2026-04-06 | Remove unsubscribed marketplace metrics backend/API path for release_9; render `##` placeholders in UI only | Canonical metric source is unavailable; prevents speculative numbers and avoids partial backend implementation | Supersedes ADR-003 for release_9 scope and defers canonical metrics integration |
 
 ---
 
@@ -1603,12 +1484,12 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 |------|-----------|
 | Active Subscription | A marketplace + region combination that the client is currently enrolled in for brand protection monitoring |
 | Unsubscribed Marketplace | A marketplace where i2o has detected reseller activity but the client has not enrolled |
-| Pain Level | Risk classification: 0–50 resellers = Low, 51–200 = Medium, 201+ = High |
-| WBR | Weekly Business Review — zip of brand-level PDFs |
+| Pain Level | Deferred in release_9 (placeholder `##` shown until canonical metrics source is defined) |
+| WBR | Weekly Business Review — published report artifact URL resolved from `schedule_wbr_details.gcs_location` |
 | Free Pilot | No-commitment trial of i2o monitoring on a specific marketplace |
 | Audit Report | L1-level unauthorized reseller activity report |
 | Enforcement Account | An i2o operational account for enforcement actions on a marketplace |
-| GCS Signed URL | Time-limited authenticated URL for direct GCS object download |
+| Placeholder Metrics | UI literal `##` values shown on unsubscribed cards when canonical metric source is unavailable |
 
 ---
 
@@ -1617,13 +1498,13 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 ### Architect Prompt for Implementation Agents
 
 The architecture is ready for implementation when:
-1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths, brand-level data schema, legacy mapping API contract, `ui_config` screen-enablement contract, and email trigger readiness)
+1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths for WBR/audit, canonical metrics-source decision, legacy mapping API contract, `ui_config` screen-enablement contract, and email trigger readiness)
 2. `account` + `account_brand` schema columns are confirmed (Open Item #2)
 3. Product Owner records PID disposition (PID path or explicit "PID not applicable for release_9")
 4. KPI dashboard in Section 12.5 is created in staging with validated event flow for PRD B4 metrics
 
 **Implementation order (suggested):**
-1. **Week 1–2:** US001 (Active Subscriptions) + US003 (Filters) + US002 (Unsubscribed Marketplaces) — core screen with both columns
+1. **Week 1–2:** US001 (Active Subscriptions) + US003 (Filters) + US002 (Unsubscribed Marketplaces UI placeholders) — core screen with both columns
 2. **Week 2–3:** US004 (WBR Download) + US005 (Start Free Pilot) + US006 (Request Audit Report)
 3. **Week 3:** US007 (View Audit Sample)
 4. **Week 3–4:** US009 (Navigation Links) — depends on `ui_config` screen-enablement API contract being stable
@@ -1637,17 +1518,17 @@ Validation mode: Comprehensive (full-stack sections evaluated)
 
 | Checklist Section | Result | Evidence |
 |-------------------|--------|----------|
-| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. Active subscriptions use legacy mapping path, while screen enablement uses `ui_config` (Sections 6.1, 7.1, 8.1, 9.3). |
+| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. Active subscriptions use legacy mapping path, screen enablement uses `ui_config`, and unsubscribed metrics are explicitly placeholder-only for release_9 (Sections 6.1, 7.4, 8.2, 9.4). |
 | 2. Architecture Fundamentals | PASS | Clear context/system diagrams and component responsibilities (Sections 3, 5). Runtime flows specify query-level behavior (Section 6). |
-| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision updates now reflect legacy mapping for active subscriptions plus `ui_config` screen enablement (Section 4.1, ADR-005, ADR-007). |
-| 4. Frontend Design & Implementation | PASS | Component hierarchy, routing, conditions, responsive behavior, and API integration are specified (Sections 5.2, 8, 9). |
+| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision updates reflect legacy mapping for active subscriptions, `ui_config` screen enablement, and unsubscribed placeholder-only rendering (Section 4.1, ADR-005, ADR-007, ADR-008). |
+| 4. Frontend Design & Implementation | PASS | Component hierarchy, routing, conditions, responsive behavior, and placeholder rendering behavior are specified (Sections 5.2, 8, 9). |
 | 5. Resilience & Operational Readiness | PASS | Error handling, retries, caching, observability, and dependency gate are explicit (Sections 10, 12). |
 | 6. Security & Compliance | PASS | AuthN/AuthZ, tenant isolation, rate limiting, input validation, and transport controls are documented (Section 11). |
 | 7. Implementation Guidance | PASS | Coding/testing standards, endpoint contracts, migration notes, and implementation order are documented (Sections 8, 10.4, 13, 17). |
-| 8. Dependency & Integration Management | PASS | Internal/external dependencies and fallbacks are tracked in go/no-go table (Section 10.5), including legacy mapping API and `ui_config` screen-enablement contracts. |
-| 9. AI Agent Implementation Suitability | PASS | Module/package structure, DTO boundaries, deterministic contracts, and explicit query/mapping logic are documented (Sections 5.3, 7.1, 8.1). |
+| 8. Dependency & Integration Management | PASS | Internal/external dependencies and fallbacks are tracked in go/no-go table (Section 10.5), including legacy mapping API, `ui_config` screen-enablement contract, and deferred canonical source decision for unsubscribed metrics. |
+| 9. AI Agent Implementation Suitability | PASS | Module/package structure, DTO boundaries, deterministic contracts, and explicit no-backend placeholder behavior for unsubscribed metrics are documented (Sections 5.3, 7.1, 7.4, 8.2). |
 | 10. Accessibility Implementation | PASS | WCAG 2.1 AA requirements, ARIA guidance, keyboard/focus behaviors, and testing approach are defined (Section 13.4). |
 
 **Checklist remediation summary**
-- No critical checklist failures remain after the v1.4 update.
+- No critical checklist failures remain after the v1.6 update.
 - Residual governance dependency: PID disposition is still open and tracked as a release gate (Sections 1.5, 10.5, 14, 17).
