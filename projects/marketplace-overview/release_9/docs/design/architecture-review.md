@@ -4,161 +4,117 @@
 
 - Project: `marketplace-overview`
 - Reviewer: `AI Agent`
-- Date: `2026-04-03`
+- Review version: `v4`
+- Date: `2026-04-06`
 - Source docs:
-  - `projects/marketplace-overview/release_9/docs/design/architecture.md`
-  - `projects/marketplace-overview/release_9/docs/requirements/prd.md`
-  - `PID`: Not found under `projects/marketplace-overview/release_9/docs`
+  - `projects/marketplace-overview/release_9/docs/design/architecture.md` (`v1.5`)
+  - `projects/marketplace-overview/release_9/docs/requirements/prd.md` (`v1.0`)
+  - `PID`: Not found; disposition pending Product Owner sign-off
+  - `projects/marketplace-overview/release_9/docs/design/ADR/adr-06-04-2026.MD`
+  - `projects/marketplace-overview/release_9/docs/design/ADR/adr-06-04-2026-02.MD`
+  - `projects/marketplace-overview/release_9/docs/design/ADR/adr-06-04-2026-03.MD`
 
 ## 2. Executive Verdict
 
 - Overall status: `Rejected`
-- Feasibility summary: The architecture is structurally strong and covers most module-level implementation concerns, but it contains one direct conflict with a P0 PRD requirement and multiple unresolved delivery risks tied to external dependencies and ambiguous failure semantics. Because P0/P1 items remain open, this design should not be approved for implementation as-is.
-- Highest-risk area: Brand filter behavior for unsubscribed marketplaces conflicts with US003 acceptance intent and can fail P0 scope.
+- Feasibility summary: The architecture covers the core Marketplace Overview flows and now resolves the earlier brand-filter, ordering, duplicate-download, email-failure, and WBR metadata contradictions. The remaining gaps are the retry queue execution mechanism and PID governance. Those items still block approval.
+- Highest-risk area: Operational readiness and governance, because the system cannot be implemented or approved cleanly without an outbox retry executor and PID disposition.
 
 ## 3. Severity Summary
 
-- `P0` count: `1`
-- `P1` count: `3`
-- `P2` count: `4`
+- `P0` count: `0`
+- `P1` count: `2`
+- `P2` count: `1`
 - `P3` count: `0`
 
 ## 4. Findings (Ordered by Severity)
 
-### AR-001
-- Severity: `P0`
-- Area: `Functional Coverage - Filtering`
-- Gap: Architecture states the brand filter does not affect unsubscribed marketplace cards, but PRD US003 requires filtered behavior across all cards.
-- Evidence:
-  - PRD: US003 corner case says both columns reflect selected brand (`requirements/prd.md:299`), and AC says "Only Denon-related data shown across all cards" (`requirements/prd.md:317`)
-  - Architecture: Filter behavior says "unsubscribed cards unchanged" (`design/architecture.md:1080`)
-- Impact: Critical requirement miss for P0 story; likely QA failure and rework across API, cache keying, and UI behavior.
-- Recommendation: Decide canonical behavior and update architecture/API contracts accordingly. If PRD intent stands, make unsubscribed endpoint/filter semantics brand-aware and define cache strategy for brand-filtered responses.
-- Status: `Open`
-
-### AR-002
+### AR-009
 - Severity: `P1`
-- Area: `Requirement Clarity / Failure Handling`
-- Gap: Pilot and audit email failure behavior is contradictory in PRD and not reconciled with a final authoritative rule.
+- Area: Data Contract / API Specification
+- Gap: `GET /marketplace-overview/config` now has a defined WBR metadata source, but the review is keeping this entry for traceability because it was the highest-risk missing contract in the prior revision.
 - Evidence:
-  - PRD includes both "show error + allow retry" (`requirements/prd.md:434`, `requirements/prd.md:498`, FAQ `requirements/prd.md:761`) and "show success + queue retry silently" (`requirements/prd.md:439`, `requirements/prd.md:503`)
-  - Architecture chooses one behavior ("return error to user ... allow retry") (`design/architecture.md:1209`) without explicit resolution note against contradictory PRD rows
-- Impact: Inconsistent UX, test ambiguity, and potential production behavior drift between frontend and backend.
-- Recommendation: Resolve failure-mode decision table by error class (sync 4xx/5xx, transport timeout, async delivery failure). Record final behavior in PRD and architecture.
-- Status: `Open`
+  - Architecture Section 6.4 now resolves WBR metadata from `i2oretail.schedule_wbr_details` via `schedule_master`, `organization`, `schedule_details`, and `report`.
+  - Architecture Section 8.1 includes the WBR metadata query and states that `latestPeriod` is the last completed Sunday in `YYYY-MM-DD` form.
+  - Architecture Section 8.3 reuses the same lookup path and parses `sw.gcs_location` JSON to extract the published GCS URL.
+- Impact: The config card can now be rendered deterministically from a single backend lookup path without guessing at table vs. GCS resolution.
+- Recommendation: No further action required for the WBR metadata contract.
+- Status: `Resolved`
 
-### AR-003
+### AR-010
 - Severity: `P1`
-- Area: `Dependency & Integration Readiness`
-- Gap: External dependencies that directly gate MVP flows remain open without owners/dates in the architecture approval gate.
+- Area: Resilience / Operations
+- Gap: `marketplace_email_outbox` and backoff settings are defined, but the architecture does not say what component actually executes retries.
 - Evidence:
-  - PRD show stoppers: GCP bucket URLs + subscription config API availability + email trigger readiness (`requirements/prd.md:690-700`)
-  - Architecture risks/open items list same dependencies (`design/architecture.md:1321`, `design/architecture.md:1324`, `design/architecture.md:1360`)
-- Impact: High schedule risk to April release; core stories US002/US004/US005/US006/US007 can slip or ship with partial behavior.
-- Recommendation: Add explicit go/no-go checklist with owner, due date, and fallback per dependency; gate environment promotion on checklist completion.
+  - Architecture Section 7.2 defines `marketplace_email_outbox`.
+  - Architecture Section 10.3 defines retry backoff config.
+  - Architecture Section 12.1.1 says transport/5xx failures queue retries, but no scheduler, worker, or poller is specified.
+- Impact: Accepted pilot and audit requests can remain stuck in retry state forever if the retry executor is omitted or implemented inconsistently.
+- Recommendation: Name the retry executor explicitly, for example a scheduled worker in `i2o-reseller` that polls `marketplace_email_outbox` where `status IN ('PENDING','RETRYING')` and `next_retry_at <= NOW()`.
 - Status: `Open`
 
-### AR-004
+### AR-011
 - Severity: `P1`
-- Area: `Review Scope Completeness`
-- Gap: PID document is missing, so PRD/PID-to-architecture traceability is incomplete.
+- Area: Governance / Delivery Readiness
+- Gap: PID disposition is still unresolved. The architecture says implementation approval is blocked until Product Owner either provides the PID path or explicitly signs off that PID is not applicable.
 - Evidence:
-  - Skill requires PRD/PID-based audit and coverage matrix
-  - No PID file found in `projects/marketplace-overview/release_9/docs` during repository scan
-- Impact: Review cannot verify non-PRD business constraints/assumptions from PID; approval confidence is reduced.
-- Recommendation: Provide PID path (or explicitly confirm PID is not applicable for this release) and rerun gap analysis for final approval.
+  - Architecture Section 1.5 marks PID as not found.
+  - Architecture Section 10.5 includes PID disposition as a Go/No-Go dependency with `Open` status.
+  - Architecture Section 17 repeats the PID disposition as an implementation readiness prerequisite.
+- Impact: This is a formal approval blocker, not just a documentation nit. The architecture is not approval-complete until the governance decision is recorded.
+- Recommendation: Product Owner must record PID disposition before implementation starts.
 - Status: `Open`
 
-### AR-005
+### AR-012
 - Severity: `P2`
-- Area: `Functional Edge-Case Coverage`
-- Gap: PRD requires deterministic alphabetical tiebreak when reseller counts are equal; architecture/API do not define this ordering rule.
+- Area: Observability / KPI Measurement
+- Gap: The architecture defines `mo_wbr_download_completed`, but the WBR flow uses a direct published GCS URL. There is no reliable browser-side callback mechanism for completion after the navigation leaves the app.
 - Evidence:
-  - PRD US002 corner case: alphabetical tiebreak (`requirements/prd.md:249`)
-  - Architecture API covers ranking and pain logic but no equal-count ordering rule (`design/architecture.md:815-875`, `design/architecture.md:1058-1063`)
-- Impact: Non-deterministic ordering across loads can cause flaky tests and confusing UI.
-- Recommendation: Add explicit sort contract: `ORDER BY total_resellers DESC, marketplace_name ASC`.
-- Status: `Open`
-
-### AR-006
-- Severity: `P2`
-- Area: `UI Interaction Contract`
-- Gap: PRD requires audit sample click debouncing; architecture states no duplicate prevention is needed.
-- Evidence:
-  - PRD US007 corner case: open/download only once with debounce (`requirements/prd.md:569`)
-  - Architecture debouncing table: "Audit Sample download - no duplicate prevention needed" (`design/architecture.md:1219`)
-- Impact: Potential duplicate downloads and mismatch against PRD acceptance expectations.
-- Recommendation: Align on expected behavior; if PRD stands, add frontend click guard/debounce and test case.
-- Status: `Open`
-
-### AR-007
-- Severity: `P2`
-- Area: `Business Observability`
-- Gap: PRD success metrics are defined, but architecture does not specify event schema/dashboard ownership to measure them end-to-end.
-- Evidence:
-  - PRD metrics: pilot requests, audit requests, WBR download rate, DAU (`requirements/prd.md:65-75`)
-  - Architecture observability is technical (latency/errors/cache) with no explicit product KPI instrumentation plan (`design/architecture.md:1233-1240`)
-- Impact: Release can ship without reliable KPI proof, weakening product validation in Q2/Q3 goals.
-- Recommendation: Add analytics event contract and reporting plan (event names, dimensions: org/brand/marketplace/user, dashboard owner, review cadence).
-- Status: `Open`
-
-### AR-008
-- Severity: `P2`
-- Area: `Decision Traceability`
-- Gap: Architecture references ADR files that are not present in the ADR folder.
-- Evidence:
-  - Architecture ADR references (`design/architecture.md:1334-1336`)
-  - `projects/marketplace-overview/release_9/docs/design/ADR` folder has no files
-- Impact: Key decisions are not auditable; future changes may re-open settled choices.
-- Recommendation: Add referenced ADR documents or remove broken links and inline final decisions with rationale.
+  - Architecture Section 12.5 defines `mo_wbr_download_completed`.
+  - Architecture Section 6.4 shows the browser navigates directly to the published WBR URL.
+- Impact: The completion event is likely to underfire or never fire, which makes the WBR download success metric unreliable.
+- Recommendation: Treat `mo_wbr_download_initiated` as the primary metric, or switch completion tracking to server-side GCS access logs if completion must be measured.
 - Status: `Open`
 
 ## 5. PRD/PID Coverage Matrix
 
 | Requirement ID/Topic | Source | Architecture Coverage | Notes |
 |---|---|---|---|
-| US001 Active subscription cards + enforcement popup + link gating | PRD | Full | Covered in sections 6.1, 7.1, 8.1, 9.2, 9.3 |
-| US002 Unsubscribed marketplace ranking + pain levels | PRD | Partial | Pain thresholds covered; equal-reseller alphabetical tiebreak missing |
-| US003 Brand/enforcement filtering across screen | PRD | Conflicting | Brand filter behavior conflicts on unsubscribed side (AR-001) |
-| US004 WBR download + not-available handling | PRD | Partial | Core flow covered; partial zip "note in filename" rule not defined |
-| US005 Start free pilot (capture fields, dedupe, tooltip) | PRD | Partial | Core flow and dedupe covered; failure semantics ambiguous (AR-002) |
-| US006 Request audit report + duplicate handling | PRD | Partial | Duplicate handling covered; failure semantics ambiguous (AR-002) |
-| US007 Audit sample download | PRD | Partial | Core endpoint covered; rapid-click debounce conflicts (AR-006) |
-| US009 Navigation to Analytics/Enforcement/Violations | PRD | Full | Route mapping and subscription-based gating documented |
-| Show stoppers and dependency deadlines | PRD | Partial | Risks listed but no explicit go/no-go control model (AR-003) |
-| Success metrics instrumentation | PRD | Partial | Technical metrics present; product KPI implementation plan missing (AR-007) |
-| Security/tenant isolation | PRD | Full | org_id isolation, auth, rate limiting, validation are documented |
-| PID baseline coverage | PID | Missing | PID document not provided/found (AR-004) |
+| US001 Active subscriptions + enforcement popup + link gating | PRD | Full | Core card flow, popup, and gating are covered in Sections 6.1, 7.1, 8.1, 9.3. |
+| US002 Unsubscribed marketplace ranking + pain levels | PRD | Full | Pain thresholds, ordering contract, cache strategy, and error handling are covered. |
+| US003 Brand and enforcement filtering | PRD | Full | Brand filter behavior is defined; enforcement filter scope is present in Section 9.4. |
+| US004 WBR download | PRD | Full | Download flow and config-card WBR metadata resolution are now defined through the schedule-table lookup path (AR-009 resolved). |
+| US005 Start Free Pilot | PRD | Full | Duplicate prevention, failure semantics, and retry behavior are documented. |
+| US006 Request Audit Report | PRD | Full | Duplicate audit behavior and retry semantics are documented. |
+| US007 Audit sample download | PRD | Full | One-click guard and signed URL download are covered. |
+| US009 Navigation links | PRD | Full | `ui_config` screen gates and route mapping are explicit. |
+| Success metrics / observability | PRD | Partial | KPI plan exists, but WBR completion tracking is not reliable as written (AR-012). |
+| PID baseline | PID | Missing | PID file not provided; disposition still pending (AR-011). |
 
 ## 6. Feasibility and Delivery Risk Assessment
 
 - Technical feasibility risks:
-  - Brand filter behavior conflict for P0 story introduces likely redesign at API/data contract level.
-  - ADR references unresolved in repository reduce decision stability.
-- Integration/dependency risks:
-  - GCP bucket path confirmation and schema finalization remain open.
-  - Subscription config/API readiness and email trigger configuration are still external dependencies.
+  - The retry queue has no specified executor, so the failure recovery path is incomplete even though the table and backoff settings exist.
+- Integration and dependency risks:
+  - GCP bucket paths, legacy mapping contract, `ui_config` screen-enablement contract, and email trigger validation remain release gates in Section 10.5.
+  - PID is still open and blocks formal approval.
 - Non-functional readiness risks:
-  - Product KPI instrumentation is not concretely defined despite PRD success metrics.
-  - Edge-case behavior contracts (ordering, debounce) are not fully aligned.
-- Rollout/migration/operations risks:
-  - Migration DDL exists, but go-live readiness gates are not explicit.
-  - Current architecture is not approval-ready until P0/P1 items are resolved and re-reviewed.
+  - Direct published-URL downloads make `mo_wbr_download_completed` hard to measure reliably.
+- Rollout and operations risks:
+  - The deployment checklist is good, but production promotion is still gated on several open items. Until those are closed, the architecture is not deployment-ready.
 
 ## 7. Open Questions and Assumptions
 
-1. Should brand filters apply to unsubscribed marketplace cards, or should PRD US003 be revised to subscription-side-only behavior?
-2. For pilot/audit email failures, what is the canonical UX per failure type: immediate error+retry, or optimistic success with async retry?
-3. Where is the PID document for `marketplace-overview/release_9`, or can Product explicitly mark PID as not applicable?
-4. Who owns each external dependency (GCP bucket URLs/schema, subscription config API shape, support email readiness) and what are approval cutoff dates?
-5. Should audit sample download enforce debounce/one-click behavior, or should PRD US007 corner case be updated?
+1. What process executes `marketplace_email_outbox` retries?
+2. Will Product Owner provide PID disposition or explicitly mark PID as not applicable?
+3. Is `mo_wbr_download_completed` expected to be approximate, or should it be replaced with a server-side metric?
 
 ## 8. Approval Log
 
-- Current approval status: `Not Approved`
+- Current approval status: `Rejected`
 - Approval date: `N/A`
 - Approved by: `N/A`
-- Approval conditions (if any):
-  - Resolve AR-001 (P0)
-  - Resolve AR-002/AR-003/AR-004 (P1)
-  - Confirm acceptance or remediation plan for open P2 findings
+- Approval conditions:
+  - Resolve AR-010 before implementation starts.
+  - Resolve AR-011 before architecture approval.
+  - Revisit AR-012 before KPI sign-off.

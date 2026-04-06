@@ -47,12 +47,15 @@ This document describes the technical architecture for the **Marketplace Overvie
 | **Data model** | Weekly KPI snapshot from BigQuery aggregation | Subscription config + GCP bucket marketplace data (quarterly) |
 | **Filters** | Brand, Region, Calendar, View Toggle | Brand, Enforcement Account, Region (US only in this release) |
 | **New features** | Initiate Trial email | WBR download, Start Free Pilot, Request Audit Report, View Audit Sample, Enforcement account popup, Navigation links |
-| **Data source** | BigQuery → PostgreSQL snapshot (weekly) | PostgreSQL config + GCP bucket (quarterly marketplace data, WBR PDFs, audit samples) |
+| **Data source** | BigQuery → PostgreSQL snapshot (weekly) | PostgreSQL config + GCP bucket (quarterly marketplace data, WBR artifacts, audit samples) |
 
 ### Change Log
 
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2026-04-06 | v1.5 | Defined canonical WBR metadata lookup through `schedule_wbr_details` + `sw.gcs_location` JSON for latest date and download target | Sandeep |
+| 2026-04-06 | v1.4 | Reverted active subscription sourcing to legacy `org_market_mapping` API path; brands from `brand_master`; enforcement accounts from `account` + `account_brand`; `ui_config` retained only for screen enablement | Sandeep |
+| 2026-04-06 | v1.3 | Updated active subscription cards to be sourced from `ui_config` (same config source family as screen enablement) | Sandeep |
 | 2026-04-06 | v1.2 | Replaced subscription-type-based navigation enablement with `ui_config`-based screen enablement query wrapped in `/marketplace-overview/config` | Sandeep |
 | 2026-04-04 | v1.1 | Remediation update for architecture-review findings AR-001 to AR-008 | Sandeep |
 | 2026-04-03 | v1.0 | Initial architecture for release_9 client-facing redesign | Sandeep |
@@ -65,6 +68,33 @@ This document describes the technical architecture for the **Marketplace Overvie
   - `BrandProtector.BrandViolation.BrandViolations` (Brand Violations link)
 - `i2o-reseller` `GET /marketplace-overview/config` is the single API wrapper for this screen-enablement fetch logic.
 - ADR link: `docs/design/ADR/adr-06-04-2026.MD` (see Section 15).
+
+### Change Notes (v1.3)
+
+- Active subscription cards are now sourced from `i2oretail.ui_config` instead of `org_market_mapping`.
+- `GET /marketplace-overview/config` now wraps both:
+  - active-subscription config rows from `ui_config`
+  - screen-enablement rows from `ui_config`
+- ADR link: `docs/design/ADR/adr-06-04-2026-02.MD` (see Section 15).
+
+### Change Notes (v1.4)
+
+- Active subscription marketplace+region mapping reverted to legacy `org_market_mapping` API path.
+- Brands continue from `brand_master`.
+- Enforcement accounts now explicitly use `account` joined to `account_brand` (`account_id`, `org_id` scoped).
+- `ui_config` is retained only for screen enablement (`BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`).
+- ADR link: `docs/design/ADR/adr-06-04-2026-03.MD` (see Section 15).
+
+### Change Notes (v1.5)
+
+- WBR metadata is resolved from `i2oretail.schedule_wbr_details` joined through `schedule_master`, `organization`, `schedule_details`, and `report`.
+- The backend computes `period` as the most recent Sunday date in `YYYY-MM-DD` form, then filters:
+  - `stage = 'ARCHIVING'`
+  - `status = 'SUCCESS'`
+  - `r.report_title = 'Weekly Business Review BP Report'`
+  - `o.org_id = :orgId`
+- `sw.gcs_location` is stored as JSON. The backend parses that payload and uses the published GCS URL from the JSON as the WBR download target.
+- `GET /marketplace-overview/config` uses the same lookup to populate `wbrInfo.available` and `wbrInfo.latestDate`.
 
 ### 1.5 Source Artifacts and Traceability Scope
 
@@ -84,7 +114,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | TypeScript 4.9.5, Angular Material 15.2.9, RxJS 7.5.7 | Locked frontend stack versions |
 | Keycloak for authentication | All services share Keycloak OAuth2/OIDC; org/user context derived from bearer token |
 | PostgreSQL (Cloud SQL) for operational/config data | Subscription config, marketplace config, enforcement accounts stored in PostgreSQL |
-| GCP Cloud Storage for marketplace data files and WBR PDFs | Data team populates buckets quarterly (marketplace data) and weekly (WBR); bucket URLs TBD by data team |
+| GCP Cloud Storage for marketplace data files and WBR artifacts | Data team populates buckets quarterly (marketplace data) and weekly (WBR); bucket URLs TBD by data team |
 | Multi-tenant by `org_id` | All data queries filter by `org_id` extracted from Keycloak token — never from client payload |
 | US region only in this release | Non-US regions deferred to Phase 2 |
 | Quarterly data refresh for unsubscribed marketplace data | Data scraped quarterly by data team, stored in GCP bucket |
@@ -99,7 +129,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 | Communication Partner | Inputs | Outputs |
 |----------------------|--------|---------|
-| Client (Browser) | Brand/enforcement filter selections, pilot/audit requests, WBR download clicks | Rendered subscription cards, unsubscribed marketplace cards, WBR zip download, confirmation messages |
+| Client (Browser) | Brand/enforcement filter selections, pilot/audit requests, WBR download clicks | Rendered subscription cards, unsubscribed marketplace cards, WBR report download, confirmation messages |
 | Support Team | — | Pilot request emails, audit request emails (to support@i2oretail.com) |
 | Data Team | Quarterly marketplace data uploads to GCP, weekly WBR PDF uploads to GCP | — |
 | Account Manager | — | Self-serve screen for client meetings |
@@ -125,7 +155,7 @@ This document describes the technical architecture for the **Marketplace Overvie
   │ - org_market_mapping                  │  │ - Marketplace data bucket   │
   │ - ui_config (screen enablement)       │  │   (quarterly JSON/CSV)      │
   │ - brand_master                        │  │ - WBR PDF bucket            │
-  │ - org_marketplace_account             │  │   (weekly zip per client)   │
+  │ - account / account_brand             │  │   (weekly zip per client)   │
   │ - marketplace (reference)             │  │ - Audit sample PDF bucket   │
   │ - marketplace_pilot_requests          │  │                             │
   │ - ui_config / component (config)      │  └─────────────────────────────┘
@@ -143,7 +173,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | i2o-reseller | HTTPS REST | Primary backend for config, marketplace data, WBR, pilot/audit endpoints |
 | i2o-email-service | HTTPS REST (internal) | Called by i2o-reseller to send pilot/audit emails via SendGrid |
 | i2o-master-data | JDBC (shared PostgreSQL) | Source for brand, org, marketplace, enforcement account reference data |
-| Google Cloud Storage | GCS Client Library | Marketplace data files (quarterly), WBR PDFs (weekly), audit sample PDFs |
+| Google Cloud Storage | GCS Client Library | Marketplace data files (quarterly), WBR artifacts (weekly), audit sample PDFs |
 | Keycloak | OIDC/OAuth2 | Authentication, user/org context, role-based access |
 
 ---
@@ -155,11 +185,11 @@ This document describes the technical architecture for the **Marketplace Overvie
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Frontend Module | Rework existing `marketplace-overview` Angular module in `frontendapplication-i2oretail` | Module already exists from release_8; components will be replaced with new layout |
-| Active Subscription Data | Read from PostgreSQL `org_market_mapping` + `brand_master` + enforcement account tables | Existing reference data; no new schema required for subscription cards |
+| Active Subscription Data | Read from legacy mapping path (`org_market_mapping` + `marketplace`) with org scope | Preserves existing marketplace/region mapping behavior and compatibility with older API flow |
 | Unsubscribed Marketplace Data | Read brand-level marketplace data from GCP bucket (JSON) via new `i2o-reseller` endpoint | Supports PRD US003 requirement that brand filter affects unsubscribed cards by aggregating only selected brands |
 | Unsubscribed Data Caching | Cache brand-level unsubscribed rows in PostgreSQL `marketplace_unsubscribed_cache` table with TTL | Avoid repeated GCS reads on every page load; aggregate by selected brand IDs at request time |
-| WBR Download | Generate GCS signed URL via `i2o-reseller` endpoint, browser downloads directly | Avoids proxying large zip files through the API; signed URL expires in 15 minutes |
-| Audit Sample PDF | Serve from GCS signed URL | Same pattern as WBR; static PDF stored in GCS |
+| WBR Download | Return published GCS URL resolved from `sw.gcs_location` JSON via `i2o-reseller` endpoint | Avoids proxying large files through the API; the published URL is object-specific and tenant-scoped by `org_id` |
+| Audit Sample PDF | Serve from GCS signed URL | Separate pattern from WBR; static PDF stored in GCS |
 | Pilot/Audit Email | Two new POST endpoints in `i2o-reseller`, both call `i2o-email-service` | Reuse existing email infrastructure; separate endpoints for distinct workflows |
 | Pilot Request Tracking | New PostgreSQL table `marketplace_pilot_requests` | Track which user requested pilot for which marketplace; prevent duplicate requests |
 | Pain Level Calculation | Server-side in `i2o-reseller` based on `total_resellers` from GCP data | 0–50 = Low, 51–200 = Medium, 201+ = High; calculated at API response time |
@@ -175,7 +205,7 @@ This document describes the technical architecture for the **Marketplace Overvie
 | `frontendapplication-i2oretail` | i2o-retail/frontendapplication-i2oretail | REWORK Angular module | Replace release_8 KPI dashboard with new two-column client-facing layout |
 | `i2o-reseller` | i2o-retail/i2o-reseller | NEW `marketplaceoverview` sub-package | New endpoints: config, unsubscribed data, WBR download, pilot, audit, audit sample |
 | `i2o-email-service` | i2o-retail/i2o-email-service | No change | Consumed as-is for pilot/audit emails |
-| `i2o-master-data` | i2o-retail/i2o-master-data | No schema change | Existing tables used: `org_market_mapping`, `brand_master`, `org_marketplace_account`, `ui_config` |
+| `i2o-master-data` | i2o-retail/i2o-master-data | No schema change | Existing tables used: `org_market_mapping`, `marketplace`, `brand_master`, `account`, `account_brand`, `ui_config` |
 
 ---
 
@@ -220,16 +250,16 @@ graph TB
 
 | Name | Responsibility |
 |------|---------------|
-| `marketplace-overview` (Angular module) | Client-facing UI: subscription cards, unsubscribed cards, filter bar, WBR, pilot/audit dialogs, navigation |
+| `marketplace-overview` (Angular module) | Client-facing UI: subscription cards, unsubscribed cards, filter bar, WBR report, pilot/audit dialogs, navigation |
 | `MarketplaceOverviewController` (i2o-reseller) | REST API: config, unsubscribed data, WBR URL, pilot request, audit request, audit sample URL |
-| `MarketplaceOverviewConfigService` | Load subscription data, brands, enforcement accounts from PostgreSQL; resolve enabled screens from `ui_config.property_cd` |
+| `MarketplaceOverviewConfigService` | Load active subscriptions from `org_market_mapping`, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, and enabled screens from `ui_config.property_cd` |
 | `MarketplaceUnsubscribedDataService` | Read/cache unsubscribed marketplace data from GCS bucket |
-| `MarketplaceWbrService` | Generate signed GCS URL for WBR zip download |
+| `MarketplaceWbrService` | Resolve published WBR URL from `sw.gcs_location` JSON |
 | `MarketplacePilotService` | Handle pilot request: validate, persist, trigger email |
 | `MarketplaceAuditService` | Handle audit request: validate, trigger email; serve audit sample URL |
 | `i2o-email-service` | Send templated emails to support@i2oretail.com via SendGrid |
 | PostgreSQL | Store subscription config, brand/org reference data, pilot request tracking |
-| Google Cloud Storage | Store marketplace data files (quarterly), WBR PDFs (weekly), audit sample PDFs |
+| Google Cloud Storage | Store marketplace data files (quarterly), WBR artifacts (weekly), audit sample PDFs |
 
 ### 5.2 Level 2: Frontend Module Structure
 
@@ -293,7 +323,7 @@ com.corecompete.i2o/
     ├── service/
     │   ├── MarketplaceOverviewConfigService.java    # Subscription + filter config assembly
     │   ├── MarketplaceUnsubscribedDataService.java  # GCS read + PostgreSQL cache for marketplace data
-    │   ├── MarketplaceWbrService.java               # GCS signed URL generation for WBR zip
+    │   ├── MarketplaceWbrService.java               # Resolve published WBR URL from `sw.gcs_location` JSON
     │   ├── MarketplacePilotService.java             # Pilot request validation, persistence, email trigger
     │   └── MarketplaceAuditService.java             # Audit request email trigger + sample URL
     ├── dto/
@@ -328,24 +358,24 @@ Browser                  i2o-reseller                           PostgreSQL / GCS
   │──────────────────────────>│                                      │
   │                           │── Extract org_id from token          │
   │                           │                                      │
-  │                           │── SELECT m.marketplace_id, m.platform, m.region,
-  │                           │     omm.channel_id, omm.org_id
+  │                           │── SELECT omm.org_id, omm.marketplace_id, omm.channel_id,
+  │                           │     m.platform, m.region, m.region_priority_order
   │                           │   FROM org_market_mapping omm
   │                           │   JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
-  │                           │   WHERE omm.org_id = ? ──────────────>│
-  │                           │<── active subscriptions ──────────────│
+  │                           │   WHERE omm.org_id = ? ───────────────>│
+  │                           │<── active subscriptions (legacy map) ──│
   │                           │                                      │
   │                           │── SELECT bm.brand, bm.brand_code
   │                           │   FROM brand_master bm
   │                           │   WHERE bm.org_id = ? AND bm.is_active = true ─>│
   │                           │<── brands[] ──────────────────────────│
   │                           │                                      │
-  │                           │── SELECT oma.account_name, oma.marketplace_id,
+  │                           │── SELECT a.account_id, a.account_name, a.marketplace_id,
   │                           │     ab.brand_id, bm.brand
-  │                           │   FROM org_marketplace_account oma
-  │                           │   JOIN account_brand ab ON oma.id = ab.account_id
+  │                           │   FROM account a
+  │                           │   JOIN account_brand ab ON a.account_id = ab.account_id
   │                           │   JOIN brand_master bm ON ab.brand_id = bm.id
-  │                           │   WHERE oma.org_id = ? ──────────────>│
+  │                           │   WHERE a.org_id = ? ────────────────>│
   │                           │<── enforcement accounts + linked brands│
   │                           │                                      │
   │                           │── SELECT x.*
@@ -462,20 +492,30 @@ Browser                  i2o-reseller                      GCS
   │                           │                              │
   │ GET /marketplace-overview/wbr/download                   │
   │──────────────────────────>│                              │
-  │                           │── Resolve WBR bucket path    │
-  │                           │   for org_id + latest period │
+  │                           │── Resolve WBR metadata row    │
+  │                           │   for org_id + latest period  │
+  │                           │── Determine latestPeriod     │
+  │                           │   = last Sunday (YYYY-MM-DD) │
+  │                           │── Run schedule_wbr_details   │
+  │                           │   lookup joined to            │
+  │                           │   schedule_master /           │
+  │                           │   organization /              │
+  │                           │   schedule_details / report   │
+  │                           │   with ARCHIVING + SUCCESS    │
+  │                           │   + Weekly Business Review    │
+  │                           │   BP Report filters           │
   │                           │                              │
-  │                           │── Check if blob exists ─────>│
-  │                           │<── exists / not found ────────│
+  │                           │── Parse sw.gcs_location JSON  │
+  │                           │   and extract published URL   │
+  │                           │<── resolved location / none   │
   │                           │                              │
-  │                           │   IF exists:                 │
-  │                           │── Generate signed URL ──────>│
-  │                           │   (expiry: 15 min)           │
-  │                           │<── signed URL ────────────────│
+  │                           │   IF location resolved:       │
+  │                           │── Return published URL ─────>│
+  │                           │<── download URL ─────────────│
   │                           │                              │
   │<── { downloadUrl, latestDate, fileName }                 │
   │                                                          │
-  │ Browser navigates to signed URL → zip download starts    │
+  │ Browser navigates to published URL → WBR download starts  │
 ```
 
 ### 6.5 View Audit Sample PDF
@@ -503,7 +543,7 @@ Browser                  i2o-reseller                      GCS
 
 These tables are owned by `i2o-master-data`. `i2o-reseller` reads them via shared PostgreSQL access.
 
-#### `org_market_mapping` — Active Marketplace Subscriptions
+#### `org_market_mapping` + `marketplace` — Active Marketplace Subscriptions
 ```sql
 -- Existing table (no change required)
 -- Determines which marketplace+region combos are active for a client
@@ -522,16 +562,16 @@ FROM brand_master
 WHERE org_id = :org_id AND is_active = true;
 ```
 
-#### `org_marketplace_account` — Enforcement Accounts
+#### `account` + `account_brand` — Enforcement Accounts
 ```sql
 -- Existing table (no change required)
 -- Returns enforcement account names and their linked brands
-SELECT oma.id, oma.account_name, oma.marketplace_id,
+SELECT a.account_id, a.account_name, a.marketplace_id,
        ab.brand_id, bm.brand
-FROM org_marketplace_account oma
-JOIN account_brand ab ON oma.id = ab.account_id
+FROM account a
+JOIN account_brand ab ON a.account_id = ab.account_id
 JOIN brand_master bm ON ab.brand_id = bm.id
-WHERE oma.org_id = :org_id;
+WHERE a.org_id = :org_id;
 ```
 
 #### `ui_config` — Module/Screen Enablement
@@ -672,7 +712,7 @@ gs://{wbr-bucket}/
     └── wbr/
         └── {year}/
             └── {week_number}/
-                └── wbr_{org_name}_{date}.zip     # Contains brand-level PDFs
+                └── wbr_{org_name}_{date}.pptx    # Published WBR artifact referenced by sw.gcs_location
 
 gs://{marketplace-data-bucket}/
 └── {org_id}/
@@ -782,7 +822,7 @@ export interface MarketplaceOverviewFilter {
 
 export interface WbrInfo {
   available: boolean;
-  latestDate: string | null;    // ISO date of latest WBR
+  latestDate: string | null;    // ISO date from latest successful ARCHIVING WBR row
   downloadUrl: string | null;   // populated on click, not on config load
 }
 ```
@@ -795,7 +835,33 @@ All endpoints are in `i2o-reseller` under the `/marketplace-overview/` path pref
 
 ### 8.1 GET `/marketplace-overview/config`
 
-Returns full configuration for the Marketplace Overview page: active subscriptions, brands, enforcement accounts, screen enablement (resolved from `ui_config`), WBR availability, and pilot request status.
+Returns full configuration for the Marketplace Overview page: active subscriptions (resolved from legacy `org_market_mapping` path), brands (`brand_master`), enforcement accounts (`account` + `account_brand`), screen enablement (resolved from `ui_config`), WBR availability, and pilot request status.
+
+**Active-subscription query wrapped by this API:**
+```sql
+SELECT omm.org_id, omm.marketplace_id, omm.channel_id,
+       m.platform, m.region, m.region_priority_order
+FROM org_market_mapping omm
+JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
+WHERE omm.org_id = :org_id;
+```
+
+**Brand query wrapped by this API:**
+```sql
+SELECT id, brand, brand_code, org_id, marketplace_ids, is_active
+FROM brand_master
+WHERE org_id = :org_id
+  AND is_active = true;
+```
+
+**Enforcement account query wrapped by this API:**
+```sql
+SELECT a.account_id, a.account_name, a.marketplace_id, ab.brand_id, bm.brand
+FROM account a
+JOIN account_brand ab ON a.account_id = ab.account_id
+JOIN brand_master bm ON ab.brand_id = bm.id
+WHERE a.org_id = :org_id;
+```
 
 **Screen enablement query wrapped by this API (single backend contract in `i2o-reseller`):**
 ```sql
@@ -809,6 +875,23 @@ WHERE x.org_id = :org_id
   )
 ORDER BY x.property_cd;
 ```
+
+**WBR metadata query wrapped by this API:**
+```sql
+select o.org_id, r.report_id, r.report_title, sw.gcs_location
+from i2oretail.schedule_wbr_details sw
+join i2oretail.schedule_master sm on sw.schedule_id = sm.schedule_id
+join i2oretail.organization o on o.org_id = sm.org_id
+join i2oretail.schedule_details sd on sm.schedule_id = sd.schedule_id
+join i2oretail.report r on sd.report_id = r.report_id
+where period = :latestPeriod
+  and stage = 'ARCHIVING'
+  and status = 'SUCCESS'
+  and r.report_title = 'Weekly Business Review BP Report'
+  and o.org_id = :orgId;
+```
+
+`latestPeriod` is the last completed Sunday date in `YYYY-MM-DD` format. The backend parses `sw.gcs_location` JSON and uses the published `PPT url` from the payload as the latest WBR target.
 
 **Response:**
 ```json
@@ -873,6 +956,10 @@ ORDER BY x.property_cd;
       "BrandProtector.BrandViolation.BrandViolations"
     ]
   },
+  "activeSubscriptionSource": {
+    "source": "org_market_mapping",
+    "path": "legacy_marketplace_region_mapping_api"
+  },
   "brands": [
     { "id": "1", "name": "Denon" },
     { "id": "2", "name": "Polk" },
@@ -887,7 +974,7 @@ ORDER BY x.property_cd;
   ],
   "wbrInfo": {
     "available": true,
-    "latestDate": "2026-03-28"
+    "latestDate": "2026-03-29"
   },
   "pilotRequests": [
     { "marketplace": "EBAY", "region": "US", "status": "REQUESTED" }
@@ -956,14 +1043,20 @@ public enum PainLevel {
 
 ### 8.3 GET `/marketplace-overview/wbr/download`
 
-Generates a signed GCS URL for the WBR zip file.
+Resolves the latest archived WBR artifact for the current org, then returns the published GCS download target from `sw.gcs_location` JSON.
+
+**Lookup contract:**
+1. Derive `latestPeriod` as the most recent Sunday date in `YYYY-MM-DD` format.
+2. Run the same `schedule_wbr_details` / `schedule_master` / `organization` / `schedule_details` / `report` query used by `/config`.
+3. Parse `sw.gcs_location` JSON and select the published `PPT url` to expose as `downloadUrl`.
+4. If no row exists, return 404 with `Report not yet available for this period.`
 
 **Response (200 OK):**
 ```json
 {
-  "downloadUrl": "https://storage.googleapis.com/...(signed URL)...",
-  "fileName": "wbr_ClientName_2026-03-28.zip",
-  "latestDate": "2026-03-28"
+  "downloadUrl": "https://storage.googleapis.com/...(published URL)...",
+  "fileName": "wbr_ClientName_2026-03-29.pptx",
+  "latestDate": "2026-03-29"
 }
 ```
 
@@ -1237,7 +1330,7 @@ All environment-specific values stored in `application_properties` table:
 
 | Module | Property | Description |
 |--------|----------|-------------|
-| `marketplace_overview` | `wbr_gcs_bucket` | GCS bucket name for WBR PDFs |
+| `marketplace_overview` | `wbr_gcs_bucket` | GCS bucket name for WBR artifacts |
 | `marketplace_overview` | `marketplace_data_gcs_bucket` | GCS bucket for quarterly marketplace data |
 | `marketplace_overview` | `audit_sample_gcs_bucket` | GCS bucket for audit sample PDFs |
 | `marketplace_overview` | `audit_sample_path` | Object path within bucket |
@@ -1268,7 +1361,8 @@ Promotion from dev to staging/prod is blocked until every `Go/No-Go` row below i
 |------------|--------------|-------|----------|----------|---------------|
 | GCP bucket names/paths for marketplace data, WBR, audit sample | US002, US004, US007 | Data Team | 2026-04-11 | Open | Dev/staging use mock buckets only; production deployment blocked |
 | Brand-level marketplace JSON schema confirmed (`brand_id`, `brand_name`, marketplace metrics) | US002, US003 | Data Team + Backend Lead | 2026-04-11 | Open | Temporary parser adapter allowed in dev; production blocked if brand-level contract missing |
-| Screen enablement query contract signed off (`ui_config` + property codes `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`) | US001, US009 | Backend Lead | 2026-04-12 | Open | Dev/staging can use seeded `ui_config` rows; production blocked until contract validation |
+| Legacy marketplace-region mapping API contract (`org_market_mapping` + `marketplace`) signed off for active subscriptions | US001 | Backend Lead | 2026-04-12 | Open | Dev/staging can use fallback mock mapping payload; production blocked until contract validation |
+| `ui_config` screen-enablement contract signed off (property codes `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`) | US009 | Backend Lead | 2026-04-12 | Open | Dev/staging can use seeded `ui_config` rows; production blocked until contract validation |
 | Support email trigger path validated end-to-end (`i2o-reseller` -> `i2o-email-service` -> SendGrid) | US005, US006 | Platform + Support Ops | 2026-04-12 | Open | Use non-prod alias in dev/staging; production blocked until successful smoke test |
 | PID disposition captured (PID path provided OR Product sign-off "not applicable") | Governance / release approval | Product Owner | 2026-04-10 | Open | Architecture remains `Not Approved` until disposition is recorded |
 
@@ -1382,8 +1476,8 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 | `mo_screen_viewed` | Marketplace Overview page loads successfully | `org_id`, `user_id`, `brand_filter`, `enforcement_filter`, `region`, `bp_enabled`, `enforcement_enabled`, `brand_violations_enabled`, `session_id`, `event_ts` |
 | `mo_pilot_requested` | `start-pilot` accepted (200/202) | `org_id`, `user_id`, `marketplace`, `region`, `brand_filter`, `request_status`, `event_ts` |
 | `mo_audit_requested` | `request-audit` accepted | `org_id`, `user_id`, `marketplace`, `region`, `brand_filter`, `duplicate_flag`, `event_ts` |
-| `mo_wbr_download_initiated` | User clicks WBR View and API returns signed URL | `org_id`, `user_id`, `latest_wbr_date`, `event_ts` |
-| `mo_wbr_download_completed` | Browser download completion callback fires (or signed-url access log confirmation) | `org_id`, `user_id`, `file_name`, `event_ts` |
+| `mo_wbr_download_initiated` | User clicks WBR View and API returns the published WBR URL | `org_id`, `user_id`, `latest_wbr_date`, `event_ts` |
+| `mo_wbr_download_completed` | Browser download completion callback fires (or published-URL access log confirmation) | `org_id`, `user_id`, `file_name`, `event_ts` |
 | `mo_audit_sample_downloaded` | Audit sample signed URL resolved and opened/downloaded | `org_id`, `user_id`, `event_ts` |
 
 **Dashboard & cadence**
@@ -1415,7 +1509,7 @@ PRD success metrics (pilot requests, audit requests, WBR downloads, DAU) are imp
 |--------|--------|-------------|
 | Config API response | < 500ms (P95) | Micrometer |
 | Unsubscribed data API response | < 800ms (P95) with cache hit | Micrometer |
-| WBR signed URL generation | < 300ms (P95) | Micrometer |
+| WBR URL resolution | < 300ms (P95) | Micrometer |
 | Total page load (including both API calls) | < 3s (P95) | Playwright + Performance API |
 | Email trigger response | < 2s (P95) | Micrometer |
 
@@ -1478,9 +1572,9 @@ Pain badges must not rely on color alone:
 | PID artifact missing or unconfirmed as N/A | **HIGH** — Architecture sign-off may be blocked by governance gap | Product Owner must provide PID path or sign-off "PID not applicable" before implementation approval (Sections 1.5, 10.5, 17). |
 | GCP bucket URLs not yet confirmed by data team | **HIGH** — Blocks unsubscribed data, WBR download, audit sample | Use mock data for dev/staging. Bucket URLs must be resolved by end of Week 1. Config stored in `application_properties` for easy update. |
 | GCP marketplace data JSON schema not finalized | **MEDIUM** — Parser may need rework | Define adapter pattern in `MarketplaceUnsubscribedDataService` to isolate parsing logic. |
-| `ui_config` property code drift across environments | **MEDIUM** — Navigation links may render incorrectly if expected property keys are missing/renamed | Add startup validation in `i2o-reseller` for required keys and include an integration test seeded with `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`. |
+| `ui_config` property code drift across environments | **MEDIUM** — Navigation links may render incorrectly if expected property keys are missing/renamed | Add startup validation in `i2o-reseller` for required screen keys and include integration tests seeded with `BrandProtector`, `BrandProtector.Enforcement_Center`, `BrandProtector.BrandViolation.BrandViolations`. |
 | Email service (support@i2oretail.com) not configured for trigger address | **MEDIUM** — Pilot/audit emails may not be received | Test with internal email alias in dev/staging. Switch to production address before go-live. |
-| Enforcement account table (`org_marketplace_account`) may have different column names | **MEDIUM** — Query may fail | Validate PostgreSQL schema in Week 1. Adapt DTO mapping if columns differ. |
+| Enforcement account schema (`account` / `account_brand`) may differ by environment | **MEDIUM** — Query may fail | Validate `account.account_id`, `account.org_id`, and `account_brand.account_id` mapping in Week 1. Adapt DTO mapping if columns differ. |
 | Release_8 frontend module needs significant rework | **LOW** — Effort estimation may be off | Module structure preserved; components replaced. Common components (filter dropdowns) reused. |
 | Quarterly data may be stale for unsubscribed marketplaces | **LOW** — User sees old data | Show data freshness date on every card. Warning icon if data > 90 days old. |
 | Signed URL expiry (15 min) may cause failed downloads for large WBR files | **LOW** — Download timeout | Increase to 30 min if needed. Frontend shows loading indicator. |
@@ -1498,6 +1592,8 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 | ADR-003 | 2026-04-03 | Cache GCP unsubscribed data in PostgreSQL with brand-level rows and 24h TTL | Supports PRD US003 brand-filter behavior across unsubscribed cards without repeated GCS reads | Requires data team to provide brand-level schema and backend aggregation logic |
 | ADR-004 | 2026-04-04 | Resolve pilot/audit email failure contradiction using error-class decision table | PRD contains conflicting outcomes (error+retry vs optimistic success+silent retry) | Implementation must include `marketplace_email_outbox` and retry/alert operations |
 | ADR-005 | 2026-04-06 | Switch navigation/screen enablement source from `organization.subscription_type` mapping to `ui_config.property_cd` query wrapped by `GET /marketplace-overview/config` | Aligns module gating with tenant-specific UI config and requested property-code contract for org-level enablement | Removes static subscription-type coupling; requires validated `ui_config` seed/config in each environment |
+| ADR-006 | 2026-04-06 | Switch active subscription card source from `org_market_mapping` to `ui_config` rows consumed by `GET /marketplace-overview/config` | Keeps active-card rendering in the same org-level configuration source family as navigation/screen enablement | Reduces split-source config but adds dependency on `ui_config` payload consistency for card composition |
+| ADR-007 | 2026-04-06 | Revert active subscription source to legacy `org_market_mapping` API path; keep only screen enablement in `ui_config` | Aligns with current implementation directive: marketplace/region mapping from legacy API, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, while retaining `ui_config` only for navigation/screen gates | Supersedes ADR-006 and restores split-source model with lower migration risk for release_9 |
 
 ---
 
@@ -1521,8 +1617,8 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 ### Architect Prompt for Implementation Agents
 
 The architecture is ready for implementation when:
-1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths, brand-level data schema, screen enablement query contract, and email trigger readiness)
-2. `org_marketplace_account` schema columns are confirmed (Open Item #2)
+1. All dependency rows in Section 10.5 are marked `Closed` (including GCP paths, brand-level data schema, legacy mapping API contract, `ui_config` screen-enablement contract, and email trigger readiness)
+2. `account` + `account_brand` schema columns are confirmed (Open Item #2)
 3. Product Owner records PID disposition (PID path or explicit "PID not applicable for release_9")
 4. KPI dashboard in Section 12.5 is created in staging with validated event flow for PRD B4 metrics
 
@@ -1541,17 +1637,17 @@ Validation mode: Comprehensive (full-stack sections evaluated)
 
 | Checklist Section | Result | Evidence |
 |-------------------|--------|----------|
-| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. New screen-enablement requirement is captured in Sections 6.1, 7.1, 8.1, 9.3. |
+| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. Active subscriptions use legacy mapping path, while screen enablement uses `ui_config` (Sections 6.1, 7.1, 8.1, 9.3). |
 | 2. Architecture Fundamentals | PASS | Clear context/system diagrams and component responsibilities (Sections 3, 5). Runtime flows specify query-level behavior (Section 6). |
-| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision update for `ui_config` enablement added (Section 4.1, ADR-005). |
+| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision updates now reflect legacy mapping for active subscriptions plus `ui_config` screen enablement (Section 4.1, ADR-005, ADR-007). |
 | 4. Frontend Design & Implementation | PASS | Component hierarchy, routing, conditions, responsive behavior, and API integration are specified (Sections 5.2, 8, 9). |
 | 5. Resilience & Operational Readiness | PASS | Error handling, retries, caching, observability, and dependency gate are explicit (Sections 10, 12). |
 | 6. Security & Compliance | PASS | AuthN/AuthZ, tenant isolation, rate limiting, input validation, and transport controls are documented (Section 11). |
 | 7. Implementation Guidance | PASS | Coding/testing standards, endpoint contracts, migration notes, and implementation order are documented (Sections 8, 10.4, 13, 17). |
-| 8. Dependency & Integration Management | PASS | Internal/external dependencies and fallbacks are tracked in go/no-go table (Section 10.5), including new `ui_config` contract dependency. |
+| 8. Dependency & Integration Management | PASS | Internal/external dependencies and fallbacks are tracked in go/no-go table (Section 10.5), including legacy mapping API and `ui_config` screen-enablement contracts. |
 | 9. AI Agent Implementation Suitability | PASS | Module/package structure, DTO boundaries, deterministic contracts, and explicit query/mapping logic are documented (Sections 5.3, 7.1, 8.1). |
 | 10. Accessibility Implementation | PASS | WCAG 2.1 AA requirements, ARIA guidance, keyboard/focus behaviors, and testing approach are defined (Section 13.4). |
 
 **Checklist remediation summary**
-- No critical checklist failures remain after the v1.2 update.
+- No critical checklist failures remain after the v1.4 update.
 - Residual governance dependency: PID disposition is still open and tracked as a release gate (Sections 1.5, 10.5, 14, 17).

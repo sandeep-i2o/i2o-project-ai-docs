@@ -2,54 +2,48 @@
 
 - Project: `marketplace-overview`
 - Release: `release_9`
-- Remediation Date: `2026-04-04`
-- Source Review: `projects/marketplace-overview/release_9/docs/design/architecture-review.md`
-- Updated Architecture: `projects/marketplace-overview/release_9/docs/design/architecture.md`
+- Remediation Date: `2026-04-06`
+- Source Review: `projects/marketplace-overview/release_9/docs/design/architecture-review.md` (`v4`)
+- Updated Architecture: `projects/marketplace-overview/release_9/docs/design/architecture.md` (`v1.5`)
 
 ## 1. Summary by Severity
 
-| Severity | Findings | Resolved | Partially Resolved | Deferred | Cannot Resolve |
+| Severity | Findings | Resolved | Open | Deferred | Cannot Resolve |
 |---|---:|---:|---:|---:|---:|
-| P0 | 1 | 1 | 0 | 0 | 0 |
-| P1 | 3 | 2 | 0 | 1 | 0 |
-| P2 | 4 | 4 | 0 | 0 | 0 |
+| P1 | 3 | 1 | 1 | 1 | 0 |
+| P2 | 1 | 0 | 1 | 0 | 0 |
 | P3 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | **8** | **7** | **0** | **1** | **0** |
+| **Total** | **4** | **1** | **2** | **1** | **0** |
 
 ## 2. Finding-to-Change Matrix
 
-| Finding ID | Severity | Status (Before) | Affected Area | Recommendation | `architecture.md` Target Section | Planned Change | Acceptance Check | Status (After) | Evidence (Updated Section/Quote) | Owner | Notes/Blockers |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| AR-001 | P0 | Open | Functional Coverage - Filtering | Align canonical brand filter behavior across all cards | 4.1, 6.1, 7.2, 7.4, 8.2, 9.4 | Make unsubscribed data brand-aware end-to-end: brand-level cache schema, brand-filter query contract, aggregation by selected brands | Section defines API contract + data model + runtime behavior where same brand filter affects both columns | Resolved | 9.4: "Both columns update... unsubscribed cards recompute totals only for selected brands"; 8.2 includes `appliedBrandIds`; 7.2 cache now includes `brand_id` | Backend Lead | None |
-| AR-002 | P1 | Open | Requirement Clarity / Failure Handling | Resolve contradictory pilot/audit email failure behavior with error-class decision table | 8.4, 8.5, 12.1, 12.1.1 | Add authoritative failure matrix by class (validation/auth vs sync transport/5xx vs async delivery) + explicit 202 queued response contract + retry outbox design | Section includes failure class, API behavior, UI behavior, and retry ownership | Resolved | 12.1.1 decision table and 8.4/8.5 `202 Accepted` (`deliveryState: "QUEUED_RETRY"`) | Backend Lead + Platform Team | None |
-| AR-003 | P1 | Open | Dependency & Integration Readiness | Add explicit go/no-go checklist with owner, due date, fallback; gate promotion | 10.5, 17 | Create dependency checklist with owner/due date/go-no-go/fallback and explicit promotion block rule | Checklist includes owner, date, fallback, and promotion gate criteria | Resolved | 10.5 table includes owner/due date/fallback and "Promotion rule... deployment to production is rejected" | Engineering Manager | Dependency items remain operationally open, but architecture control model is now defined |
-| AR-004 | P1 | Open | Review Scope Completeness | Provide PID path or explicit not-applicable decision | 1.5, 10.5, 17 | Record current PID absence and add mandatory Product Owner disposition gate | Section clearly identifies PID state, owner, and decision required before approval | Deferred | 1.5 PID row: "Not found... Pending product decision"; 10.5 includes PID go/no-go row | Product Owner | Blocking external decision: PID file path or explicit "not applicable" sign-off is still pending |
-| AR-005 | P2 | Open | Functional Edge-Case Coverage | Define deterministic alphabetical tie-break for equal reseller counts | 6.1, 8.2, 9.2 | Add deterministic ordering contract (`total_resellers DESC, marketplace_name ASC`) in runtime + API + UI hierarchy notes | Section explicitly states tie-break sort rule | Resolved | 8.2: "ORDER BY total_resellers DESC, marketplace_name ASC"; 9.2 includes same tiebreak behavior | Backend Lead | None |
-| AR-006 | P2 | Open | UI Interaction Contract | Align audit sample rapid-click behavior with debounce/guard | 8.6, 12.2 | Replace "no duplicate prevention" with one-click guard behavior and timing | Section specifies duplicate prevention behavior and guard lifecycle | Resolved | 12.2: "Audit Sample download | One-click guard..." and 8.6 frontend guard note | Frontend Lead | None |
-| AR-007 | P2 | Open | Business Observability | Add analytics event schema, dashboard ownership, and review cadence | 12.4, 12.5, 17 | Add KPI event contract (names/dimensions), ownership, cadence, and launch gate | Section defines event names, required dimensions, dashboard owner, cadence | Resolved | 12.5 event table (`mo_screen_viewed`, `mo_pilot_requested`, etc.) + owner/cadence + release gate | Product Analytics | None |
-| AR-008 | P2 | Open | Decision Traceability | Remove broken ADR references or provide ADR evidence | 15 | Replace broken file links with inline ADR records including rationale/consequence | Section contains auditable ADR records without broken links | Resolved | 15 now has inline ADR table (ADR-001 to ADR-004) and no `ADR/...` file references | Tech Lead | None |
+| Finding ID | Severity | Status (Before) | Affected Area | Recommendation | `architecture.md` Target Section | Planned Change | Acceptance Check | Status (After) | Evidence (Updated Section/Quote) | Owner | Notes / Blockers |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AR-009 | P1 | Open | Data Contract / API Specification | Define the WBR metadata source and lookup path explicitly | 6.4, 8.1, 8.3, 1.4 | Add canonical `schedule_wbr_details` lookup, period derivation, and `sw.gcs_location` JSON parsing for `wbrInfo.latestDate` and download target | Section includes the exact SQL join path, `latestPeriod` derivation, and JSON parsing rule | Resolved | Section 6.4 now resolves WBR metadata via `schedule_wbr_details`; Section 8.1 includes the query; Section 8.3 reuses the same lookup path | Backend Lead | None |
+| AR-010 | P1 | Open | Resilience / Operations | Name the retry executor explicitly | 7.2, 10.3, 12.1.1 | Add a scheduled worker or poller in `i2o-reseller` that drains `marketplace_email_outbox` for `PENDING` / `RETRYING` rows | Section names the executor, polling cadence, and retry-state transition rules | Open | No retry executor is defined yet | Backend Lead + Platform Team | Implementation decision still pending |
+| AR-011 | P1 | Open | Governance / Delivery Readiness | Provide PID path or explicit not-applicable sign-off | 1.5, 10.5, 17 | Record PID disposition in the architecture approval log | Section contains the PID path or a product sign-off that PID is not applicable | Deferred | PID remains not found; approval is still blocked on Product Owner disposition | Product Owner | External decision required |
+| AR-012 | P2 | Open | Observability / KPI Measurement | Treat WBR completion as approximate or switch to server-side tracking | 6.4, 12.5 | Either document `mo_wbr_download_completed` as best-effort or replace it with server-side GCS access-log confirmation | Section defines a reliable completion signal or removes the inaccurate metric | Open | Current WBR flow still uses direct published URL navigation, so browser-side completion remains weak | Product Analytics + Backend Lead | Lowers metric fidelity, but does not block basic flow approval |
 
 ## 3. Unresolved / Deferred Items
 
 | Finding ID | Severity | Disposition | Owner | Blocking Decision | Target Date |
 |---|---|---|---|---|---|
-| AR-004 | P1 | Deferred | Product Owner | Provide PID path in repo or approve explicit statement: "PID not applicable for release_9" | 2026-04-10 |
+| AR-010 | P1 | Open | Backend Lead + Platform Team | Confirm the retry executor that polls `marketplace_email_outbox` and drains retryable failures | 2026-04-08 |
+| AR-011 | P1 | Deferred | Product Owner | Provide PID path in repo or approve explicit statement: "PID not applicable for release_9" | 2026-04-10 |
+| AR-012 | P2 | Open | Product Analytics + Backend Lead | Decide whether WBR completion is approximate or needs server-side confirmation | 2026-04-11 |
 
 ## 4. Validation Notes for Resolved Findings
 
-- AR-001 validated by consistent contract across runtime (6.1), data schema (7.2/7.4), API (8.2), and UI filter behavior (9.4).
-- AR-002 validated by class-based failure table (12.1.1) and explicit API examples for queued-retry responses in 8.4/8.5.
-- AR-003 validated by dependency gate table with owners/due dates/fallbacks and CI/CD promotion blocking rule in 10.5.
-- AR-005 validated by explicit deterministic ordering contract in API spec and mirrored UI hierarchy expectation.
-- AR-006 validated by replacing the prior non-guard behavior with one-click guard policy.
-- AR-007 validated by event schema and dashboard ownership/cadence mapped to PRD success metrics.
-- AR-008 validated by replacing broken ADR links with inline ADR records.
+- AR-009 is resolved by the new canonical WBR query in Section 8.1 and the matching runtime flow in Section 6.4.
+- The backend now derives `latestPeriod` as the most recent Sunday date and uses `sw.gcs_location` JSON as the download source, so the config API has a deterministic WBR lookup path.
 
 ## 5. Approval Readiness
 
-Architecture is **not approval-ready** yet because one P1 finding (AR-004) remains deferred pending Product Owner decision on PID applicability/path.
+Architecture is **not approval-ready** yet.
 
-Required stakeholder decision:
-1. Product Owner must confirm one of:
-   - PID path for `release_9`, or
-   - signed statement that PID is not applicable for this release.
+Remaining blockers:
+1. AR-010 still lacks a concrete retry executor.
+2. AR-011 still lacks PID disposition from Product Owner.
+
+Non-blocking but still open:
+1. AR-012 should be resolved before KPI sign-off because WBR completion tracking is still approximate.
