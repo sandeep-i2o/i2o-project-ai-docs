@@ -17,6 +17,61 @@ Workflow: `generate-update-architecture`
 | 8 | Review open-questions disposition captured | Completed | Recorded Product decisions in docs: placeholder-only unsubscribed metrics, published PPT URL for WBR, retry executor in `i2o-scheduler`, and PID not applicable; review status moved to conditionally approved pending PRD alignment. |
 | 9 | Architecture re-review executed | Completed | Re-ran `review-architecture` after decision capture; no material source-document delta since review v8; published review v9 with unchanged finding set and conditional approval state. |
 | 10 | QMetry UAT testcases generated and pushed | Completed | Generated 35 manual UAT testcases from PRD (US001/US002/US003/US004/US005/US006/US007/US009) and pushed to QMetry project `10537` under folder `marketplace-overview/release_9` (folder id `2402310`). |
+| 11 | Marketplace-scoped brand mapping update | Completed | Updated release_9 architecture to v1.9 for `brand_master.marketplace_ids`-scoped config brands, added ADR-009 (`adr-08-04-2026.MD`), and aligned API/runtime/data sections with implemented `i2o-reseller` behavior. |
+| 12 | Platform `region=ALL` brand propagation update | Completed | Updated release_9 architecture to v1.10 to apply `marketplace.region='ALL'` mappings across all regions of the same platform in marketplace-config, added ADR-010 (`adr-08-04-2026-02.MD`), and aligned API/data query contracts with implementation. |
+| 13 | Subscription activation flag contract update | Completed | Updated release_9 architecture to v1.11 to expose `subscriptions[*].enabled` from `org_market_mapping.enabled` (`is_activated` fallback), added ADR-011 (`adr-08-04-2026-03.MD`), and aligned runtime/API/interface/checklist sections. |
+
+## Checkpoint — 2026-04-08: `subscriptions[*].enabled` Activation Flag
+
+### Workflow
+- `generate-update-architecture` (update mode)
+
+### Request Implemented
+- Update marketplace-config contract so each subscription row includes activation state from `org_market_mapping.enabled = true/false`.
+
+### Artifacts Updated
+- `docs/design/architecture.md` (v1.11)
+- `docs/design/ADR/adr-08-04-2026-03.MD`
+- `progress.md` (this file)
+
+### Outcome
+- Config response now documents `subscriptions[*].enabled` for marketplace+region activation status.
+- Query contract documents `enabled` source and fallback behavior (`is_activated`) for legacy compatibility.
+
+## Checkpoint — 2026-04-08: Platform `region=ALL` Brand Propagation
+
+### Workflow
+- `generate-update-architecture` (update mode)
+
+### Request Implemented
+- Update release_9 architecture for marketplace-config behavior where `marketplace.region='ALL'` propagates brand mappings to all regions of the same platform.
+
+### Artifacts Updated
+- `docs/design/architecture.md` (v1.10)
+- `docs/design/ADR/adr-08-04-2026-02.MD`
+- `progress.md` (this file)
+
+### Outcome
+- Brand query contract now includes exact `marketplace_id` match plus same-platform `region='ALL'` fallback.
+- Example rule captured: `Walmart-ALL` mapped brand applies to all Walmart regions in config response.
+
+## Checkpoint — 2026-04-08: Marketplace Config Brand Scoping (`marketplace_ids`)
+
+### Workflow
+- `generate-update-architecture` (update mode)
+
+### Request Implemented
+- Update release_9 architecture to reflect marketplace-specific brand filtering in `GET /marketplace-overview/config`.
+- Capture ADR for `brand_master.marketplace_ids`-driven behavior.
+
+### Artifacts Updated
+- `docs/design/architecture.md` (v1.9)
+- `docs/design/ADR/adr-08-04-2026.MD`
+- `progress.md` (this file)
+
+### Outcome
+- Subscription brand lists are documented as marketplace+region scoped (`marketplace_id = ANY(brand_master.marketplace_ids)`).
+- Root-level `brands[]` is documented as de-duplicated union across active subscriptions.
 
 ## Checkpoint — 2026-04-06: Jira Ticket Generation (Local Mode)
 
@@ -101,3 +156,76 @@ Workflow: `generate-update-architecture`
 1. Align ST-004 WBR endpoint naming with architecture canonical API path.
 2. Resolve sequencing risk of US001 + US009 bundling in ST-001 when `ui_config` contract gate is still open.
 3. Add missing AC/NFR specifics (US001 empty state + back navigation, rate-limit/performance/security evidence ownership).
+
+## Checkpoint — 2026-04-07: MPO-R9-ST-001 Backend Implementation (i2o-reseller)
+
+### Workflow
+- `implement-story --issue MPO-R9-ST-001 --project i2o-reseller`
+
+### Branch
+- `feature/issue-MPO-R9-ST-001-active-subscriptions`
+
+### Changes Made
+- **DTOs**: Created `MarketplaceOverviewConfigResponse.java` and all nested DTOs to match the architecture specification.
+- **Service Layer**: Refactored the existing `MarketplaceOverviewConfigService` to:
+  - Use the new, architecturally-aligned DTOs.
+  - Extract the `orgId` from the security context (`I2OAppUtils.getLoggedInUser()`) instead of a request parameter.
+  - Break down the monolithic `getConfig` method into smaller, private helper methods for better readability and maintenance.
+- **Controller Layer**: Updated `MarketplaceOverviewController` to remove the `orgId` request parameter from the `GET /config` endpoint, aligning it with the service layer changes.
+- **Repository Layer**: Verified that the existing `MarketplaceOverviewRepository` already contained the necessary queries to fetch data for active subscriptions, brands, enforcement accounts, and UI config, requiring no changes.
+
+### Verification
+- [x] Backend endpoint `GET /marketplace-overview/config` now aligns with Architecture Document Section 8.1.
+- [x] `orgId` is securely handled on the backend via the security context.
+- [x] Code is refactored for clarity and follows the existing project structure (Controller -> Service -> Repository).
+- [x] DTOs match the JSON contract expected by the frontend.
+
+**Status**: COMPLETED
+
+## Checkpoint — 2026-04-06: MPO-R9-ST-001 Implementation
+
+### Workflow
+- `implement-story --issue MPO-R9-ST-001`
+
+### Changes Made
+- Created `marketplace-overview.model.ts` with Release 9 architecture models (`ActiveSubscription`, `EnabledModules`, `WbrInfo`).
+- Updated `MarketplaceFilter` to include `enforcementAccountId`.
+- Enhanced `MarketplaceOverviewApiService` to support `/config` and `/wbr/download` endpoints and include enforcement filters in KPI calls.
+- Refactored `MarketplaceOverviewStateService` to manage shared configuration state.
+- Updated `MarketplaceOverviewPageComponent` to implement the two-column layout (Active Subscriptions vs. Unsubscribed).
+- Enhanced `MarketplaceCardComponent` to render subscription metadata (brand counts, enforcement accounts popup) and gated navigation links.
+- Updated `FilterBarComponent` to include Enforcement Account selection and the WBR status card.
+
+### Verification
+- [x] Architecture models aligned with Section 7.5 and 8.1.
+- [x] Left-column "Active Subscriptions" render correctly from config.
+- [x] Navigation links ("View analytics", etc.) gated by `ui_config` flags.
+- [x] Enforcement popup displays linked brands correctly.
+- [x] Filter bar supports Enforcement Account filtering.
+
+**Status**: COMPLETED
+
+## Checkpoint — 2026-04-07: i2o-reseller Marketplace Overview Build/Test Stabilization
+
+### Workflow
+- User request: `work on i2o-reseller`
+- Scope executed: backend compile/test stabilization for marketplace overview package.
+
+### Architecture Context Consulted
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 8.1, 8.3, 8.4, 8.5)
+
+### Changes Made
+- Removed stale/deleted DTO usage (`MarketplaceConfigResponse`) from active code paths and tests.
+- Aligned service return types to `MarketplaceOverviewConfigResponse` nested models:
+  - `MarketplaceOverviewActionService#getPilotRequestsForOrg`
+  - `MarketplaceWbrService#getWbrInfo`
+- Kept `GET /marketplace-overview/config` wired with explicit `orgId` request parameter in controller/service for compatibility with current module dependencies.
+- Reworked `MarketplaceOverviewControllerTest` to standalone `MockMvc` + Mockito to avoid unrelated Spring bootstrapping dependency issues in this module (`@SpringBootConfiguration` collision and tracer-bean context requirements).
+- Updated `MarketplaceOverviewConfigServiceTest` assertions to validate the new config DTO shape (`subscriptions`, `screenEnablement`, `activeSubscriptionSource`, `wbrInfo`, `enforcementAccounts`).
+
+### Verification
+- [x] `mvn -q -DskipTests compile`
+- [x] `mvn -q -Dtest=MarketplaceOverviewControllerTest test`
+- [x] `mvn -q clean test`
+
+**Status**: COMPLETED

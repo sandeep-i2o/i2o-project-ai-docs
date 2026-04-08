@@ -53,6 +53,9 @@ This document describes the technical architecture for the **Marketplace Overvie
 
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2026-04-08 | v1.11 | Added `subscriptions[*].enabled` in marketplace-config, sourced from `org_market_mapping.enabled` (`is_activated` fallback when needed) | Sandeep |
+| 2026-04-08 | v1.10 | Updated marketplace-config brand resolution so `marketplace.region = 'ALL'` acts as platform-wide fallback (applies to all regions for that platform) | Sandeep |
+| 2026-04-08 | v1.9 | Updated `GET /marketplace-overview/config` brand resolution to filter `brand_master` by subscription marketplace using `marketplace_ids` (`marketplace_id = ANY(marketplace_ids)`) so each marketplace+region card returns scoped brands | Sandeep |
 | 2026-04-06 | v1.8 | Captured review-resolution decisions: placeholder-only unsubscribed metrics accepted for release_9, WBR canonical artifact set to published PPT URL, outbox retry executor assigned to `i2o-scheduler`, PID marked not applicable | Sandeep |
 | 2026-04-06 | v1.7 | Defined authoritative unsubscribed-marketplace validation source for pilot/audit as `org_market_mapping.enabled = false` | Sandeep |
 | 2026-04-06 | v1.6 | Removed canonical/backend metrics path for unsubscribed marketplaces; UI now renders `##` placeholders only with no API/backend logic | Sandeep |
@@ -120,6 +123,29 @@ This document describes the technical architecture for the **Marketplace Overvie
 - Canonical WBR artifact for release_9 is the published `PPT url` parsed from `schedule_wbr_details.gcs_location` JSON.
 - `marketplace_email_outbox` retry execution ownership is assigned to `i2o-scheduler` via scheduled retry job.
 - PID is marked **Not Applicable** for release_9 by Product direction (recorded 2026-04-06).
+
+### Change Notes (v1.9)
+
+- `GET /marketplace-overview/config` now resolves brands per active subscription marketplace instead of returning the same org-level list for all cards.
+- Backend mapping rule: for each active `marketplace_id`, include only brands where `marketplace_id = ANY(brand_master.marketplace_ids)`.
+- `subscriptions[].brands` and `subscriptions[].brandCount` are marketplace-region scoped; root-level `brands[]` remains the de-duplicated union across active subscriptions.
+- ADR link: `docs/design/ADR/adr-08-04-2026.MD` (see Section 15).
+
+### Change Notes (v1.10)
+
+- Added platform-wide brand propagation rule for marketplace rows where `marketplace.region = 'ALL'`.
+- In `GET /marketplace-overview/config`, each subscription row now includes brands from:
+  - exact `marketplace_id` membership in `brand_master.marketplace_ids`
+  - or any `marketplace_ids` entry that maps to the same `platform` with `region = 'ALL'`
+- Example: if `marketplace(platform='Walmart', region='ALL')` is linked in `brand_master.marketplace_ids`, that brand is included for `Walmart-US`, `Walmart-CA`, and all other Walmart regions in config response.
+- ADR link: `docs/design/ADR/adr-08-04-2026-02.MD` (see Section 15).
+
+### Change Notes (v1.11)
+
+- `GET /marketplace-overview/config` now includes `subscriptions[*].enabled` for each marketplace+region row.
+- Enablement source is `org_market_mapping.enabled`; when legacy fallback path is used, `org_market_mapping.is_activated` is mapped to the same response field.
+- `enabled=true` means activated for that org + marketplace + region; `enabled=false` means mapped but not activated.
+- ADR link: `docs/design/ADR/adr-08-04-2026-03.MD` (see Section 15).
 
 ### 1.5 Source Artifacts and Traceability Scope
 
@@ -276,7 +302,7 @@ graph TB
 |------|---------------|
 | `marketplace-overview` (Angular module) | Client-facing UI: subscription cards, unsubscribed cards, filter bar, WBR report, pilot/audit dialogs, navigation |
 | `MarketplaceOverviewController` (i2o-reseller) | REST API: config, WBR URL, pilot request, audit request, audit sample URL |
-| `MarketplaceOverviewConfigService` | Load active subscriptions from `org_market_mapping`, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, and enabled screens from `ui_config.property_cd` |
+| `MarketplaceOverviewConfigService` | Load marketplace subscription mappings from `org_market_mapping` with per-row activation flag (`enabled`), resolve brands from `brand_master` scoped by `marketplace_ids` with platform-level fallback when `marketplace.region='ALL'`, load enforcement accounts from `account` + `account_brand`, and enabled screens from `ui_config.property_cd` |
 | `MarketplaceWbrService` | Resolve published WBR URL from `sw.gcs_location` JSON |
 | `MarketplacePilotService` | Handle pilot request: validate, persist, trigger email |
 | `MarketplaceAuditService` | Handle audit request: validate, trigger email; serve audit sample URL |
@@ -379,16 +405,28 @@ Browser                  i2o-reseller                           PostgreSQL / GCS
   │                           │── Extract org_id from token          │
   │                           │                                      │
   │                           │── SELECT omm.org_id, omm.marketplace_id, omm.channel_id,
-  │                           │     m.platform, m.region, m.region_priority_order
+  │                           │     m.platform, m.region, m.region_priority_order,
+  │                           │     COALESCE(omm.enabled,false) as enabled
   │                           │   FROM org_market_mapping omm
   │                           │   JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
   │                           │   WHERE omm.org_id = ? ───────────────>│
-  │                           │<── active subscriptions (legacy map) ──│
+  │                           │<── subscription mappings + enabled flag ─│
   │                           │                                      │
-  │                           │── SELECT bm.brand, bm.brand_code
+  │                           │── For each subscription marketplace_id:
+  │                           │   SELECT bm.id, bm.brand
   │                           │   FROM brand_master bm
-  │                           │   WHERE bm.org_id = ? AND bm.is_active = true ─>│
-  │                           │<── brands[] ──────────────────────────│
+  │                           │   WHERE bm.org_id = ?
+  │                           │     AND lower(cast(bm.is_active as text)) IN ('true','yes','1')
+  │                           │     AND (
+  │                           │       ? = ANY(bm.marketplace_ids)
+  │                           │       OR EXISTS (
+  │                           │         SELECT 1 FROM marketplace m_all
+  │                           │         WHERE m_all.marketplace_id = ANY(bm.marketplace_ids)
+  │                           │           AND upper(m_all.platform) = upper(?)
+  │                           │           AND upper(m_all.region) = 'ALL'
+  │                           │       )
+  │                           │     ) ─────────────────────────────────────────>│
+  │                           │<── brands[] scoped by marketplace_id ───────────│
   │                           │                                      │
   │                           │── SELECT a.account_id, a.account_name, a.marketplace_id,
   │                           │     ab.brand_id, bm.brand
@@ -564,9 +602,10 @@ These tables are owned by `i2o-master-data`. `i2o-reseller` reads them via share
 #### `org_market_mapping` + `marketplace` — Active Marketplace Subscriptions
 ```sql
 -- Existing table (no change required)
--- Determines which marketplace+region combos are active for a client
+-- Determines marketplace+region mapping and activation flag for a client
 SELECT omm.org_id, omm.marketplace_id, omm.channel_id,
-       m.platform, m.region, m.region_priority_order
+       m.platform, m.region, m.region_priority_order,
+       COALESCE(omm.enabled, false) as enabled
 FROM org_market_mapping omm
 JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
 WHERE omm.org_id = :org_id;
@@ -577,7 +616,18 @@ WHERE omm.org_id = :org_id;
 -- Existing table (no change required)
 SELECT id, brand, brand_code, org_id, marketplace_ids, is_active
 FROM brand_master
-WHERE org_id = :org_id AND is_active = true;
+WHERE org_id = :org_id
+  AND lower(cast(is_active as text)) IN ('true', 'yes', '1')
+  AND (
+    :marketplace_id = ANY(marketplace_ids)
+    OR EXISTS (
+      SELECT 1
+      FROM marketplace m_all
+      WHERE m_all.marketplace_id = ANY(brand_master.marketplace_ids)
+        AND upper(m_all.platform) = upper(:platform)
+        AND upper(m_all.region) = 'ALL'
+    )
+  );
 ```
 
 #### `account` + `account_brand` — Enforcement Accounts
@@ -731,6 +781,7 @@ Canonical source for unsubscribed marketplace metrics is currently unavailable. 
 export interface ActiveSubscription {
   marketplace: string;         // 'Amazon', 'Walmart', etc.
   region: string;              // 'US', 'UK', etc.
+  enabled: boolean;            // true when org_market_mapping.enabled (or fallback is_activated) is true
   logoUrl: string;             // marketplace logo asset path
   brandCount: number;
   brands: BrandPill[];
@@ -800,24 +851,37 @@ All endpoints are in `i2o-reseller` under the `/marketplace-overview/` path pref
 
 ### 8.1 GET `/marketplace-overview/config`
 
-Returns full configuration for the Marketplace Overview page: active subscriptions (resolved from legacy `org_market_mapping` path), brands (`brand_master`), enforcement accounts (`account` + `account_brand`), screen enablement (resolved from `ui_config`), WBR availability, and pilot request status.
+Returns full configuration for the Marketplace Overview page: marketplace subscription mappings with activation flags (resolved from legacy `org_market_mapping` path), brands (`brand_master`), enforcement accounts (`account` + `account_brand`), screen enablement (resolved from `ui_config`), WBR availability, and pilot request status.
 
 **Active-subscription query wrapped by this API:**
 ```sql
 SELECT omm.org_id, omm.marketplace_id, omm.channel_id,
-       m.platform, m.region, m.region_priority_order
+       m.platform, m.region, m.region_priority_order,
+       COALESCE(omm.enabled, false) as enabled
 FROM org_market_mapping omm
 JOIN marketplace m ON omm.marketplace_id = m.marketplace_id
 WHERE omm.org_id = :org_id;
 ```
 
-**Brand query wrapped by this API:**
+**Brand query wrapped by this API (executed per active `marketplace_id`):**
 ```sql
 SELECT id, brand, brand_code, org_id, marketplace_ids, is_active
 FROM brand_master
 WHERE org_id = :org_id
-  AND is_active = true;
+  AND lower(cast(is_active as text)) IN ('true', 'yes', '1')
+  AND (
+    :marketplace_id = ANY(marketplace_ids)
+    OR EXISTS (
+      SELECT 1
+      FROM marketplace m_all
+      WHERE m_all.marketplace_id = ANY(brand_master.marketplace_ids)
+        AND upper(m_all.platform) = upper(:platform)
+        AND upper(m_all.region) = 'ALL'
+    )
+  );
 ```
+
+`platform` in this query is sourced from the active subscription row being assembled. If that platform has an `ALL` region mapping in `brand_master.marketplace_ids`, the brand is included across all regions of that platform.
 
 **Enforcement account query wrapped by this API:**
 ```sql
@@ -865,6 +929,7 @@ where period = :latestPeriod
     {
       "marketplace": "Amazon",
       "region": "US",
+      "enabled": true,
       "logoUrl": "/assets/logos/amazon.svg",
       "brandCount": 6,
       "brands": [
@@ -901,9 +966,13 @@ where period = :latestPeriod
     {
       "marketplace": "Walmart",
       "region": "US",
+      "enabled": false,
       "logoUrl": "/assets/logos/walmart.svg",
-      "brandCount": 6,
-      "brands": ["...same brands..."],
+      "brandCount": 2,
+      "brands": [
+        { "id": "2", "name": "Polk" },
+        { "id": "5", "name": "Bowers & Wilkins" }
+      ],
       "enforcementAccountCount": 1,
       "enforcementAccounts": ["..."],
       "enabledModules": {
@@ -1514,6 +1583,9 @@ ADR records are tracked in `docs/design/ADR/` and summarized below.
 | ADR-006 | 2026-04-06 | Switch active subscription card source from `org_market_mapping` to `ui_config` rows consumed by `GET /marketplace-overview/config` | Keeps active-card rendering in the same org-level configuration source family as navigation/screen enablement | Reduces split-source config but adds dependency on `ui_config` payload consistency for card composition |
 | ADR-007 | 2026-04-06 | Revert active subscription source to legacy `org_market_mapping` API path; keep only screen enablement in `ui_config` | Aligns with current implementation directive: marketplace/region mapping from legacy API, brands from `brand_master`, enforcement accounts from `account` + `account_brand`, while retaining `ui_config` only for navigation/screen gates | Supersedes ADR-006 and restores split-source model with lower migration risk for release_9 |
 | ADR-008 | 2026-04-06 | Remove unsubscribed marketplace metrics backend/API path for release_9; render `##` placeholders in UI only | Canonical metric source is unavailable; prevents speculative numbers and avoids partial backend implementation | Supersedes ADR-003 for release_9 scope and defers canonical metrics integration |
+| ADR-009 | 2026-04-08 | Scope config brands by marketplace using `brand_master.marketplace_ids` membership (`marketplace_id = ANY(marketplace_ids)`) | Removes incorrect behavior where each marketplace+region card showed the same org-level brand list | `subscriptions[].brands` and `brandCount` become marketplace-region specific; root `brands[]` remains a de-duplicated union of active subscription brands |
+| ADR-010 | 2026-04-08 | Treat marketplace rows with `region='ALL'` as platform-wide brand mapping in config assembly | Ensures one brand mapping can apply to all platform regions without duplicating `marketplace_ids` per region | Marketplace-config brand selection now includes exact marketplace match plus same-platform `ALL` fallback |
+| ADR-011 | 2026-04-08 | Expose activation status per subscription row as `subscriptions[*].enabled` from `org_market_mapping.enabled` (`is_activated` fallback) | Frontend and downstream logic need explicit activation state per marketplace+region instead of inferring from row presence | Config response can carry both activated and non-activated mappings with explicit boolean enablement |
 
 ---
 
@@ -1556,9 +1628,9 @@ Validation mode: Comprehensive (full-stack sections evaluated)
 
 | Checklist Section | Result | Evidence |
 |-------------------|--------|----------|
-| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. Active subscriptions use legacy mapping path, screen enablement uses `ui_config`, and unsubscribed metrics are explicitly placeholder-only for release_9 (Sections 6.1, 7.4, 8.2, 9.4). |
+| 1. Requirements Alignment | PASS | PRD user stories and acceptance behaviors are mapped through Sections 6, 8, 9, 12, 13. Subscription mappings use legacy `org_market_mapping` with explicit `enabled` flag, screen enablement uses `ui_config`, subscription brands are scoped by `brand_master.marketplace_ids` with same-platform `region='ALL'` fallback, and unsubscribed metrics are explicitly placeholder-only for release_9 (Sections 6.1, 7.1, 8.1, 8.2, 9.4). |
 | 2. Architecture Fundamentals | PASS | Clear context/system diagrams and component responsibilities (Sections 3, 5). Runtime flows specify query-level behavior (Section 6). |
-| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision updates reflect legacy mapping for active subscriptions, `ui_config` screen enablement, and unsubscribed placeholder-only rendering (Section 4.1, ADR-005, ADR-007, ADR-008). |
+| 3. Technical Stack & Decisions | PASS | Versioned stack and decision rationale maintained (Sections 2, 4). Decision updates reflect legacy mapping with explicit subscription activation flag, marketplace-scoped brand resolution via `marketplace_ids` plus platform-level `region='ALL'` fallback, `ui_config` screen enablement, and unsubscribed placeholder-only rendering (Section 4.1, ADR-005, ADR-007, ADR-008, ADR-009, ADR-010, ADR-011). |
 | 4. Frontend Design & Implementation | PASS | Component hierarchy, routing, conditions, responsive behavior, and placeholder rendering behavior are specified (Sections 5.2, 8, 9). |
 | 5. Resilience & Operational Readiness | PASS | Error handling, retries, caching, observability, and dependency gate are explicit (Sections 10, 12). |
 | 6. Security & Compliance | PASS | AuthN/AuthZ, tenant isolation, rate limiting, input validation, and transport controls are documented (Section 11). |
