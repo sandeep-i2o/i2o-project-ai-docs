@@ -15,23 +15,25 @@ priority: P0
 
 ## Two-Agent Validation
 - **User Value (Charlie-Conductor):** Converts unmonitored-marketplace intent directly into a support workflow.
-- **Technical (Bob-Builder):** Requires strict validation using `org_market_mapping.enabled = false`, idempotent pilot tracking, and email dispatch with retry-safe behavior.
+- **Technical (Bob-Builder):** Requires strict validation using `marketplace_unsubscribed_metrics`, idempotent pilot tracking, and email dispatch with retry-safe behavior.
 
 ## Acceptance Criteria
-1. `POST /marketplace-overview/start-pilot` validates marketplace against org-scoped unsubscribed set (`org_market_mapping.enabled=false`) and requires at least one selected brand.
+1. `POST /marketplace-overview/start-pilot` validates marketplace against org-scoped unsubscribed set from `marketplace_unsubscribed_metrics` and requires at least one selected brand.
 2. Successful request persists `marketplace_pilot_requests` and disables pilot CTA with `Free pilot requested` tooltip on reload.
-3. Transport/5xx email failures return `202 Accepted` and queue outbox retry; duplicate pilot request returns `409`.
+3. Successful request updates `marketplace_unsubscribed_metrics.trial_initiated=true` for target org+marketplace.
+4. Transport/5xx email failures return `202 Accepted` and queue outbox retry; duplicate pilot request returns `409`.
 
 ## Tasks
-- [ ] Implement validation + persistence path for pilot requests and duplicate constraint handling (AC: 1, 2, 3).
+- [ ] Implement validation + persistence path for pilot requests and duplicate constraint handling (AC: 1, 2, 4).
+- [ ] Update unsubscribed metrics state (`trial_initiated=true`) after accepted pilot request (AC: 3).
 - [ ] Integrate frontend modal/CTA state transitions, disabled-button behavior, and response messaging (AC: 2, 3).
-- [ ] Add tests for 200/202/409 outcomes, required-brand validation, and button disabled-state hydration (AC: 1, 2, 3).
+- [ ] Add tests for 200/202/409 outcomes, required-brand validation, metrics-table state updates, and button disabled-state hydration (AC: 1, 2, 3, 4).
 
 ## Dev Notes
-Authoritative unsubscribed marketplace validation source is `org_market_mapping` with `enabled = false`. Do not infer from placeholder cards or client-side lists alone.
+Authoritative unsubscribed marketplace validation source is `marketplace_unsubscribed_metrics` for release_9 v1.12. Keep user-level duplicate suppression in `marketplace_pilot_requests`, and persist org-market state using `trial_initiated`.
 
 ### Architecture References
-- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 6.2, 8.4, 12.1.1, 12.3)
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 6.2, 7.2, 8.4, 11.4, 12.1.1, 12.3)
 - `projects/marketplace-overview/release_9/docs/design/architecture-review.md` (AR-014 resolved)
 
 ### Testing Standards

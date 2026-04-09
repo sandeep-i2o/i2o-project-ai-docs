@@ -28,10 +28,10 @@ priority: P0
 - [ ] Add debounce and empty-state handling tests for all-brands-cleared path (AC: 3).
 
 ## Dev Notes
-Unsubscribed metrics remain placeholders in release_9, but selected brands still drive pilot/audit request payloads.
+Unsubscribed metrics are table-backed in release_9 (`marketplace_unsubscribed_metrics`) and returned via `/marketplace-overview/config`. Brand filter still drives pilot/audit payload context, while metric values remain backend-provided with per-field fallback only for missing data.
 
 ### Architecture References
-- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 5.2, 9.4, 12.2)
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 5.2, 8.1, 8.2, 9.4, 12.2)
 - `projects/marketplace-overview/release_9/docs/requirements/prd.md` (US003)
 
 ### Testing Standards
@@ -59,4 +59,3 @@ Against checklist templates:
 - [x] Terms explained
 
 **Validation Result**: READY
-

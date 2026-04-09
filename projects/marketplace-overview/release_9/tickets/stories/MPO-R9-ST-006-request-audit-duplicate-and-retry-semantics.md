@@ -18,20 +18,22 @@ priority: P0
 - **Technical (Bob-Builder):** Similar to pilot path but with duplicate-allowed semantics and `[DUPLICATE]` email subject handling.
 
 ## Acceptance Criteria
-1. `POST /marketplace-overview/request-audit` validates marketplace using `org_market_mapping.enabled=false` and accepts duplicate requests.
-2. Duplicate requests succeed and mark outbound email subject with `[DUPLICATE]` prefix while returning confirmation message.
-3. Transport/5xx email failures return `202 Accepted` and persist outbox rows for scheduled retry.
+1. `POST /marketplace-overview/request-audit` validates marketplace using `marketplace_unsubscribed_metrics` and accepts duplicate requests.
+2. Accepted requests update `marketplace_unsubscribed_metrics` for target org+marketplace (`audit_requested=true`, `audit_status`, `audit_type`, `audit_requested_time`).
+3. Duplicate requests succeed and mark outbound email subject with `[DUPLICATE]` prefix while returning confirmation message.
+4. Transport/5xx email failures return `202 Accepted` and persist outbox rows for scheduled retry.
 
 ## Tasks
-- [ ] Implement audit request service path with duplicate-detection annotation and duplicate subject formatting (AC: 1, 2).
-- [ ] Implement frontend request-audit modal/CTA states and response message handling for success + accepted retry states (AC: 2, 3).
-- [ ] Add tests for standard success, duplicate success, and queued-retry semantics (AC: 2, 3).
+- [ ] Implement audit request service path with duplicate-detection annotation and duplicate subject formatting (AC: 1, 3).
+- [ ] Persist audit-state updates in `marketplace_unsubscribed_metrics` for accepted requests (AC: 2).
+- [ ] Implement frontend request-audit modal/CTA states and response message handling for success + accepted retry states (AC: 3, 4).
+- [ ] Add tests for standard success, metrics-table audit state updates, duplicate success, and queued-retry semantics (AC: 2, 3, 4).
 
 ## Dev Notes
-Unlike pilot flow, audit flow allows duplicate requests by design. Keep marketplace validation source aligned with pilot (`org_market_mapping.enabled=false`).
+Unlike pilot flow, audit flow allows duplicate requests by design. Keep marketplace validation source aligned with pilot using `marketplace_unsubscribed_metrics`.
 
 ### Architecture References
-- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 6.3, 8.5, 12.1.1, 12.3)
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 6.3, 7.2, 8.5, 11.4, 12.1.1, 12.3)
 - `projects/marketplace-overview/release_9/docs/requirements/prd.md` (US006)
 
 ### Testing Standards

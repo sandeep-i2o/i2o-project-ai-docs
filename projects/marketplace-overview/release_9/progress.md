@@ -1,7 +1,7 @@
 # Progress — marketplace-overview / release_9
 
-Date: 2026-04-06  
-Workflow: `generate-update-architecture`
+Date: 2026-04-09  
+Workflow: `generate-update-architecture`, `generate-jira-tickets`
 
 ## Checkpoints
 
@@ -20,6 +20,92 @@ Workflow: `generate-update-architecture`
 | 11 | Marketplace-scoped brand mapping update | Completed | Updated release_9 architecture to v1.9 for `brand_master.marketplace_ids`-scoped config brands, added ADR-009 (`adr-08-04-2026.MD`), and aligned API/runtime/data sections with implemented `i2o-reseller` behavior. |
 | 12 | Platform `region=ALL` brand propagation update | Completed | Updated release_9 architecture to v1.10 to apply `marketplace.region='ALL'` mappings across all regions of the same platform in marketplace-config, added ADR-010 (`adr-08-04-2026-02.MD`), and aligned API/data query contracts with implementation. |
 | 13 | Subscription activation flag contract update | Completed | Updated release_9 architecture to v1.11 to expose `subscriptions[*].enabled` from `org_market_mapping.enabled` (`is_activated` fallback), added ADR-011 (`adr-08-04-2026-03.MD`), and aligned runtime/API/interface/checklist sections. |
+| 14 | Unsubscribed metrics table contract update | Completed | Updated release_9 architecture to v1.12 to source unsubscribed metrics from new `marketplace_unsubscribed_metrics`, added ADR-012 (`adr-09-04-2026.MD`), and aligned runtime/data/API/UI/checklist dependencies with per-card fallback handling. |
+| 15 | Local ticket update for unsubscribed metrics architecture delta | Completed | Ran `generate-jira-tickets` in local update mode and updated affected epic/story drafts (`MPO-R9-EP-001`, `MPO-R9-ST-002`, `MPO-R9-ST-003`, `MPO-R9-ST-005`, `MPO-R9-ST-006`) to align with `marketplace_unsubscribed_metrics` contract and v1.12 behavior. |
+| 16 | MPO-R9-ST-002 backend implementation in `i2o-reseller` | Completed | Implemented backend-only story slice: `/marketplace-overview/config` now maps `unsubscribedMarketplaces[]` from `marketplace_unsubscribed_metrics`, pain level derivation added, and pilot/audit validation+state updates aligned to same table in `i2o-reseller` (no frontend changes). |
+
+## Checkpoint — 2026-04-09: Local Ticket Update for Unsubscribed Metrics Delta
+
+### Workflow
+- `generate-jira-tickets` (`--project marketplace-overview --release release_9 --action update --local yes`)
+
+### Preflight / Mode
+- Action normalized to local artifact update (no Jira mutation).
+- `--local yes` honored: no `acli` commands executed.
+- Project scope resolved from request: `marketplace-overview`.
+
+### Selected Architecture Inputs
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (v1.12 sections for 7.2, 8.1, 8.2, 8.4, 8.5, 9.4, 10.5)
+- `projects/marketplace-overview/release_9/docs/design/ADR/adr-09-04-2026.MD`
+- `projects/marketplace-overview/release_9/docs/requirements/prd.md` (US002/US005/US006 context)
+
+### Two-Agent Summary
+- **Charlie (strategy):** Keep conversion flows intact while replacing placeholder-only unsubscribed cards with real metrics to improve decision confidence.
+- **Bob (execution):** Update story contracts to use `marketplace_unsubscribed_metrics`, keep `/config` as single bootstrap API, and preserve retry/idempotency semantics.
+
+### Artifacts Updated (Local)
+- `tickets/epics/MPO-R9-EP-001-marketplace-overview-client-facing-redesign.md`
+- `tickets/stories/MPO-R9-ST-002-unsubscribed-placeholder-cards-and-cta-shell.md`
+- `tickets/stories/MPO-R9-ST-003-filter-bar-brand-and-enforcement-behavior.md`
+- `tickets/stories/MPO-R9-ST-005-start-free-pilot-validation-persistence-email.md`
+- `tickets/stories/MPO-R9-ST-006-request-audit-duplicate-and-retry-semantics.md`
+
+### Outcome
+- Story scope for US002 now reflects table-backed unsubscribed metrics and per-field fallback behavior.
+- Pilot/Audit validation references now align to `marketplace_unsubscribed_metrics` in story drafts.
+- Epic dependencies and story breakdown now reflect unsubscribed-metrics DDL/backfill readiness.
+- Story draft validation status remains `READY` for updated local drafts.
+
+## Checkpoint — 2026-04-09: MPO-R9-ST-002 Backend Implementation (`i2o-reseller` only)
+
+### Workflow
+- `implement-story --project-id marketplace-overview --release release_9 --instructions "don't touch frontend, update only i2o-reseller"`
+
+### Scope Applied
+- Backend-only implementation in `i2o-reseller` (frontend intentionally untouched per instruction).
+- Implemented release_9 v1.12 contract for `unsubscribedMarketplaces[]` in `GET /marketplace-overview/config`.
+- Aligned pilot/audit validation source to `marketplace_unsubscribed_metrics` and persisted CTA state updates in that table.
+
+### Architecture Inputs Consulted Before Coding
+- `projects/marketplace-overview/release_9/docs/design/architecture.md` (Sections 4.1, 7.2, 8.1, 8.2, 8.4, 8.5, 11.4, 12.1.1)
+- `projects/marketplace-overview/release_9/docs/design/ADR/adr-09-04-2026.MD`
+- `projects/marketplace-overview/release_9/tickets/stories/MPO-R9-ST-002-unsubscribed-placeholder-cards-and-cta-shell.md`
+
+### Backend Artifacts Updated (`i2o-reseller`)
+- DTO contract extended with `unsubscribedMarketplaces[]` and full unsubscribed row fields.
+- Repository added metrics query + pilot/audit state update methods against `marketplace_unsubscribed_metrics`.
+- Config service now maps unsubscribed metrics rows (including pain level derivation: `LOW|MEDIUM|HIGH`).
+- Action service now validates pilot/audit requests using `marketplace_unsubscribed_metrics` and updates `trial_initiated` / `audit_*` fields.
+- Unit tests added/updated for config mapping and action-service behavior.
+
+### Verification
+- Executed targeted backend tests:
+  - `mvn -Dtest=MarketplaceOverviewConfigServiceTest,MarketplaceOverviewActionServiceTest,MarketplaceOverviewControllerTest,MarketplaceWbrServiceTest test`
+- Result: `BUILD SUCCESS` (`15` tests run, `0` failures, `0` errors).
+
+## Checkpoint — 2026-04-09: Unsubscribed Metrics from New Table
+
+### Workflow
+- `generate-update-architecture` (update mode)
+
+### Request Implemented
+- Update release_9 architecture to fetch unsubscribed marketplace metrics (`total products`, `total listings`, `total resellers`) from a new PostgreSQL table.
+- Define new table contract with required key columns:
+  - `org_id`, `marketplace_id` (FK from `marketplace`)
+  - `total_products`, `total_listings`, `total_resellers`
+  - `audit_requested`, `trial_initiated`
+  - `temp1`, `temp2`
+  - `audit_status`, `audit_type`, `audit_requested_time`, `audit_report_gcs_link`
+
+### Artifacts Updated
+- `docs/design/architecture.md` (v1.12)
+- `docs/design/ADR/adr-09-04-2026.MD`
+- `progress.md` (this file)
+
+### Outcome
+- `GET /marketplace-overview/config` now documents `unsubscribedMarketplaces[]` sourced from `marketplace_unsubscribed_metrics`.
+- Runtime, data architecture, API examples, UI behavior, migration notes, dependency gate, risk table, and checklist evidence are aligned to table-backed metrics.
+- Fallback behavior remains explicit: `##` + `Data pending` is shown only when specific metric values are missing/null.
 
 ## Checkpoint — 2026-04-08: `subscriptions[*].enabled` Activation Flag
 
